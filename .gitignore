@@ -1,0 +1,11 @@
+node_modules/
+.vite/
+coverage/
+*.tsbuildinfo
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# docs/ is the generated GitHub Pages site and must be committed for branch deployment.

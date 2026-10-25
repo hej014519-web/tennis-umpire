@@ -1,0 +1,28 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: #203d34;
+  background: #f5f5ed;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; min-width: 0; min-height: 100%; overflow: hidden; }
+body { line-height: 1.5; }
+#root { min-height: 100vh; min-height: 100dvh; }
+h1, h2, h3, h4, p, figure { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { appearance: none; border: 0; padding: 0; background: none; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+input, select, textarea { min-width: 0; }
+textarea { resize: vertical; }
+a { color: inherit; text-decoration: none; }
+fieldset { margin: 0; }
+svg { flex-shrink: 0; }
+[hidden] { display: none !important; }
+
+@supports not (aspect-ratio: 800 / 460) { .ump-court-board::before { content:""; display:block; padding-top:57.5%; } }
