@@ -8,6 +8,7 @@ import UmpireCourt from './court';
 import './umpire.css';
 
 const SYNC_API_URL=String(import.meta.env.VITE_SYNC_API_URL||'');
+const COURT_VIEW_KEY='startline:umpire:court-projection:v1';
 type Panel='share'|'setup'|'penalty'|'history'|'more'|'correct'|'manage'|'rules'|'service'|'order'|null;
 type Confirm={title:string;body:string;danger?:boolean;label?:string;run:()=>void};
 const statusText:Record<MatchState['status'],string>={scheduled:'待开赛',live:'比赛进行中',paused:'已暂停',medical:'医疗暂停',completed:'比赛已结束'};
@@ -30,6 +31,7 @@ function Field({label,children}:{label:string;children:ReactNode}){return <label
 export default function UmpireApp(){
  const [session,setSession]=useState<UmpireSession|null>(null),[panel,setPanel]=useState<Panel>(null),[confirm,setConfirm]=useState<Confirm|null>(null),[notice,setNotice]=useState(''),[storageError,setStorageError]=useState(''),[loadError,setLoadError]=useState(''),[online,setOnline]=useState(true),[conflict,setConflict]=useState(false),[now,setNow]=useState(0),[fullscreen,setFullscreen]=useState(false);
  const [syncState,setSyncState]=useState<SyncState|null>(null),[syncLoadError,setSyncLoadError]=useState('');
+ const [courtProjection,setCourtProjection]=useState<'2d'|'2.5d'>('2d');
  const syncClient=useRef<UmpireSyncClient|null>(null),localSession=useRef<UmpireSession|null>(null);
  const saveStartedAt=useRef(0),wasSaving=useRef(false);
  const latest=useRef<UmpireSession|null>(null),noticeTimer=useRef<ReturnType<typeof setTimeout>|null>(null),readonly=useRef(false),persistedWriteId=useRef(''),[sound,setSound]=useState(false);
@@ -40,6 +42,7 @@ export default function UmpireApp(){
   localSession.current=version;latest.current=version;setSession(version);return version;
  }
  useEffect(()=>{
+  try{if(localStorage.getItem(COURT_VIEW_KEY)==='2.5d')setCourtProjection('2.5d');}catch{/* View preferences are optional. */}
   try{const initial=browserMatchAdapter.load()||newSession();localSession.current=initial;latest.current=initial;persistedWriteId.current=initial.writeId;setSession(initial);if(!initial.savedAt)persist(initial);}catch(e){setLoadError(e instanceof Error?e.message:'无法读取本机记录');}
   let unsubscribe:undefined|(()=>void);
   try{
@@ -109,17 +112,6 @@ export default function UmpireApp(){
   {syncLoadError&&<div className="ump-sync-notice" role="alert"><TriangleAlert size={18}/><p>{syncLoadError}</p><button onClick={()=>setPanel('share')}>查看共享设置</button></div>}
   {(syncProblem||slowSave)&&<div className="ump-sync-notice" role="status"><TriangleAlert size={18}/><p>{slowSave&&!syncState?.error?'保存时间较长，请保持页面打开；确认前请勿重复计分。':syncState?.error||(unresolved?'上一操作尚未确认，已保留原请求。请联网后重试。':!online?'当前离线，计分已锁定。':'请核对最新比分后继续。')}</p>{syncState?.externalConflict?<button onClick={()=>location.reload()}>重新载入页面</button>:syncState?.reviewRequired?<button disabled={!syncState.connected||syncState.busy} onClick={()=>{try{syncClient.current?.acknowledgeReview();notify('已核对最新比分，请重新选择需要的操作。');}catch(e){notify((e as Error).message);}}}>已核对最新比分</button>:<button disabled={!online||syncState?.busy} onClick={()=>void retryShared()}>{unresolved?'重试原请求':'重新连接'}</button>}</div>}
   <div className="ump-workspace">
-   <aside className="ump-score-panel" aria-label="比分与计分">
-    {(['a','b'] as SideId[]).map(side=><section className={'ump-side ump-side-'+side} key={side}>
-     <div className="ump-side-top"><span className="ump-side-mark">{side.toUpperCase()}</span><div><span>{c.sideNames[side]}{server?.sideId===side&&<i className="ump-small-ball" aria-label="发球方"/>}</span><h3>{playerNames(m,side)}</h3></div></div>
-     <div className="ump-score-line"><span className="ump-set-count" aria-label={sideText(side)+'盘分'}>{setsWon(side)}</span><span className="ump-game-count" aria-label={sideText(side)+'局分'}>{current[side]}</span><strong className="ump-point-count" aria-label={sideText(side)+'当前分'}>{m.status==='completed'?'—':labels[side]}</strong></div>
-     <button className={'ump-score-button ump-score-button-'+side} disabled={!active} onClick={()=>score(side)} aria-label={sideText(side)+'得分'}><span>＋</span>{side.toUpperCase()} 得分</button>
-    </section>)}
-    {m.status==='scheduled'&&<div className="ump-format-strip"><span>{c.bestOf===1?'一盘决胜':'三盘两胜'} · {c.deuce==='no-ad'?'无占先':'有占先'} · {c.tiebreakAt} 平抢七</span><button className="ump-btn ump-primary ump-start" disabled={actionBlocked} onClick={()=>setPanel('setup')}><Play size={18}/>确认赛制并开赛</button></div>}
-    {m.serviceReviewRequired&&<button className="ump-btn ump-review" disabled={actionBlocked} onClick={()=>setPanel('service')}><TriangleAlert size={18}/>核对发球后继续</button>}
-    {m.status==='completed'&&<div className="ump-finished"><CheckCircle2 size={21}/><strong>{m.winner?playerNames(m,m.winner)+' 获胜':'比赛结束'}</strong><small>{m.endReason==='score'?'按赛制完成':'人工确认赛果 · 详见记录'}</small></div>}
-   </aside>
-   <section className="ump-court-panel" aria-label="执裁球场">
     <div className="ump-court-heading"><div className="ump-court-meta"><h2>{session.court}<span>{c.mode==='doubles'?'双打':'单打'}</span></h2><div className="ump-court-round"><strong>{m.tiebreak?'抢七':`第 ${m.sets.length} 盘 · 第 ${current.a+current.b+1} 局`}</strong><span>{m.status==='completed'?'赛果已记录':`${server?.name||'待确认'} 发球 · ${m.faults?'第二发球':'第一发球'}`}</span></div></div>
      <div className="ump-match-tools">
       <button className="ump-btn" disabled={!m.history.length||actionBlocked} onClick={()=>{const event=m.events.find(e=>e.id===m.history.at(-1)?.eventId);if(event&&['formalPenalty','finish','retire','correctScore','confirmService','start'].includes(event.type)){setConfirm({title:'撤销最近操作',body:`将撤销“${event.result}”，并恢复当时的比分和比赛状态。原记录保留为已撤销。`,label:'确认撤销',run:()=>{run({type:'undo'},'最近操作已撤销');setConfirm(null);}});}else run({type:'undo'},'最近操作已撤销');}}><Undo2 size={18}/>撤销</button>
@@ -127,10 +119,26 @@ export default function UmpireApp(){
       <button className={'ump-btn ump-penalty-entry'+(formal.length?' ump-formal':'')} title={formal.length?eventText(m,formal.at(-1)!):'判罚与比赛事件'} disabled={m.status==='scheduled'||m.status==='completed'||actionBlocked} onClick={()=>setPanel('penalty')} aria-label="判罚与事件"><Flag size={18}/><span>判罚{formal.length?' · '+formal.length:''}</span></button>
       <button className={'ump-btn ump-ends-button'+(changeHint?' ump-highlight':'')} disabled={actionBlocked||m.status==='completed'} onClick={()=>{if(changeHint)void run({type:'switchEnds'},'已交换半场，比分和发球顺序保持不变。');else setConfirm({title:'手动换边',body:'当前未到规则换边节点。仅在需要核对场上半场或纠正站位时使用；比分和发球顺序保持不变。',label:'确认手动换边',run:()=>{void run({type:'switchEnds'},'已手动核对半场');setConfirm(null);}});}} aria-label={changeHint?'按规则确认换边':'手动换边'}><ArrowLeftRight size={18}/>{changeHint?'确认换边':'换边'}</button>
       <button className="ump-btn" disabled={(!shared&&conflict)||syncState?.externalConflict||(!shared&&unresolved)} onClick={rotate} aria-label="旋转整个球场视角180度"><RotateCw size={18}/>旋转<span className="ump-key">180°</span></button>
+      <button className={'ump-btn ump-projection-toggle'+(courtProjection==='2.5d'?' ump-highlight':'')} aria-label="2.5D 立体视图" aria-pressed={courtProjection==='2.5d'} onClick={()=>{const next=courtProjection==='2d'?'2.5d':'2d';setCourtProjection(next);try{localStorage.setItem(COURT_VIEW_KEY,next);}catch{/* Keep using this view for the current page. */}}}>2.5D</button>
       {m.status!=='scheduled'&&<button className="ump-btn ump-format-button" onClick={()=>setPanel('rules')}><ShieldCheck size={17}/>赛制</button>}
      </div>
     </div>
-    <div className="ump-court-stage" aria-busy={saving}><UmpireCourt players={c.players.map(p=>({id:p.id,name:p.name,side:p.sideId,...m.positions[p.id]}))} servingPlayerId={serverId} mode={c.mode} endsSwapped={m.nearSideId==='b'} viewRotated={session.inverted} disabled={m.status==='completed'||actionBlocked} onSwapTeam={sideId=>run({type:'swapTeamPositions',sideId},'队内示意站位已互换')}/></div>
+   <aside className="ump-score-panel" aria-label="比分与计分">
+    <div className="ump-scoreboard">
+     <button className="ump-score-action ump-score-action-a" disabled={!active} onClick={()=>score('a')} aria-label="甲方得分"><span className="ump-score-action-team">A · {c.sideNames.a}</span><span className="ump-score-action-names">{playerNames(m,'a')}</span><strong><span aria-hidden="true">＋</span> A 得分</strong></button>
+     <div className="ump-central-score" role="group" aria-label="双方比分">
+      <div className="ump-central-head"><span>A {server?.sideId==='a'&&<i aria-label="甲方发球">发球</i>}</span><span>B {server?.sideId==='b'&&<i aria-label="乙方发球">发球</i>}</span></div>
+      <div className="ump-central-points"><strong className="ump-point-count" aria-label="甲方当前分">{m.status==='completed'?'—':labels.a}</strong><span aria-hidden="true">:</span><strong className="ump-point-count" aria-label="乙方当前分">{m.status==='completed'?'—':labels.b}</strong></div>
+      <div className="ump-central-detail">{(['a','b'] as SideId[]).map(side=><div key={side}><span aria-label={sideText(side)+'盘分'}>{setsWon(side)}<small>盘</small></span><span aria-label={sideText(side)+'局分'}>{current[side]}<small>局</small></span></div>)}</div>
+     </div>
+     <button className="ump-score-action ump-score-action-b" disabled={!active} onClick={()=>score('b')} aria-label="乙方得分"><span className="ump-score-action-team">B · {c.sideNames.b}</span><span className="ump-score-action-names">{playerNames(m,'b')}</span><strong><span aria-hidden="true">＋</span> B 得分</strong></button>
+    </div>
+    {m.status==='scheduled'&&<div className="ump-format-strip"><span>{c.bestOf===1?'一盘决胜':'三盘两胜'} · {c.deuce==='no-ad'?'无占先':'有占先'} · {c.tiebreakAt} 平抢七</span><button className="ump-btn ump-primary ump-start" disabled={actionBlocked} onClick={()=>setPanel('setup')}><Play size={18}/>确认赛制并开赛</button></div>}
+    {m.serviceReviewRequired&&<button className="ump-btn ump-review" disabled={actionBlocked} onClick={()=>setPanel('service')}><TriangleAlert size={18}/>核对发球后继续</button>}
+    {m.status==='completed'&&<div className="ump-finished"><CheckCircle2 size={21}/><strong>{m.winner?playerNames(m,m.winner)+' 获胜':'比赛结束'}</strong><small>{m.endReason==='score'?'按赛制完成':'人工确认赛果 · 详见记录'}</small></div>}
+   </aside>
+   <section className="ump-court-panel" aria-label="执裁球场">
+    <div className="ump-court-stage" aria-busy={saving}><UmpireCourt players={c.players.map(p=>({id:p.id,name:p.name,side:p.sideId,...m.positions[p.id]}))} servingPlayerId={serverId} mode={c.mode} endsSwapped={m.nearSideId==='b'} viewRotated={session.inverted} projection={courtProjection} disabled={m.status==='completed'||actionBlocked} onSwapTeam={sideId=>run({type:'swapTeamPositions',sideId},'队内示意站位已互换')}/></div>
    </section>
   </div>
   {viewer&&<section className="ump-bottom-row"><div className="ump-activity"><div className="ump-activity-title"><History size={18}/><strong>最近记录</strong><button onClick={()=>setPanel('history')}>全部记录 <ArrowRight size={14}/></button></div>{recent.length?<div className="ump-activity-items">{recent.map(e=><div key={e.id} className={(e.type==='formalPenalty'?'ump-formal ':'')+(e.voided?'ump-voided':'')}><span>{stamp(e.at)}</span>{e.type==='formalPenalty'&&<Flag size={14}/>}<p>{eventText(m,e)}{e.voided?' · 已撤销':''}</p><small>{e.scoreAfter}</small></div>)}</div>:<p className="ump-empty-record">确认赛制后开始执裁，每一次操作都会留下记录。</p>}</div><div className={'ump-penalty-summary'+(formal.length?' ump-formal':'')}><Flag size={18}/><div><strong>{formal.length?`正式判罚 ${formal.length} 次`:'暂无正式判罚'}</strong><span>{formal.length?eventText(m,formal.at(-1)!):'普通得分与发球失误独立记录'}</span></div>{formal.length>0&&<button className="ump-icon" aria-label="查看正式判罚" onClick={()=>setPanel('history')}><ArrowRight size={18}/></button>}</div></section>}

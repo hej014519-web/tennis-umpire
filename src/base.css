@@ -25,4 +25,4 @@ fieldset { margin: 0; }
 svg { flex-shrink: 0; }
 [hidden] { display: none !important; }
 
-@supports not (aspect-ratio: 800 / 460) { .ump-court-board::before { content:""; display:block; padding-top:57.5%; } }
+@supports not (aspect-ratio: 800 / 460) { .ump-court-board::before { content:""; display:block; padding-top:50.6329114%; } }

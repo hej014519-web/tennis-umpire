@@ -10,19 +10,22 @@ export type UmpireCourtProps={
   mode:'singles'|'doubles';
   endsSwapped:boolean;
   viewRotated:boolean;
+  projection?:'2d'|'2.5d';
   disabled?:boolean;
   onSwapTeam:(side:'a'|'b')=>void|Promise<boolean>;
 };
 
 type Point={x:number;y:number};
-const VIEW={width:800,height:460};
+const VIEW={width:790,height:400};
 // Geometry follows the full doubles rectangle; saved positions select a fixed slot only.
-const COURT={left:50,width:700,top:(VIEW.height-700*10.97/23.77)/2,height:700*10.97/23.77};
+const COURT={left:35,width:720,top:(VIEW.height-720*10.97/23.77)/2,height:720*10.97/23.77};
+const CENTER={x:VIEW.width/2,y:VIEW.height/2};
 const SINGLES_INSET=(10.97-8.23)/2/10.97;
 const SERVICE_DISTANCE=6.4/23.77*COURT.width;
 function Ball(){return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M5 5c11 3 3 11 14 14M19 5C8 8 16 16 5 19"/></svg>;}
+function Avatar(){return <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" className="ump-court-avatar-background"/><circle cx="20" cy="14" r="6" className="ump-court-avatar-person"/><path d="M8 34c0-8 5-13 12-13s12 5 12 13" className="ump-court-avatar-person"/></svg>;}
 
-export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,viewRotated,disabled=false,onSwapTeam}:UmpireCourtProps){
+export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,viewRotated,projection='2d',disabled=false,onSwapTeam}:UmpireCourtProps){
   const [announcement,setAnnouncement]=useState('');
   const pending=useRef(false);
   const id=useId().replace(/:/g,'');
@@ -47,33 +50,35 @@ export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,vi
     catch{settle(false);}
   }
 
-  return <section className={'ump-court-root'+(disabled?' ump-court-root--disabled':'')} aria-label={mode==='doubles'?'双打固定站位示意球场':'单打固定站位示意球场'}>
-    <div className={'ump-court-board ump-court-board--'+mode} style={viewStyle} role="group" aria-label={mode==='doubles'?'点击球员，交换同队示意站位':'单打球场'} aria-describedby={instructionsId} data-view-rotated={viewRotated?'true':'false'}>
+  return <section className={'ump-court-root'+(disabled?' ump-court-root--disabled':'')} aria-label={mode==='doubles'?'双打球场':'单打球场'}>
+    <div className={'ump-court-board ump-court-board--'+mode+(projection==='2.5d'?' ump-court-board--perspective':'')} style={viewStyle} role="group" aria-label={mode==='doubles'?'点击球员，交换同队示意站位':'单打球场'} aria-describedby={instructionsId} data-view-rotated={viewRotated?'true':'false'} data-projection={projection}>
+      <div className="ump-court-camera">
       <div className="ump-court-plane">
-        <svg className="ump-court-surface" viewBox="0 0 800 460" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        <svg className="ump-court-surface" viewBox={`0 0 ${VIEW.width} ${VIEW.height}`} aria-hidden="true" preserveAspectRatio="xMidYMid meet">
           <defs><pattern id={netId} width="5" height="8" patternUnits="userSpaceOnUse"><path d="M0 0H5M0 0V8" className="ump-court-net-weave"/></pattern></defs>
-          <rect width="800" height="460" rx="12" className="ump-court-surround"/>
+          <rect width={VIEW.width} height={VIEW.height} rx="10" className="ump-court-surround"/>
           <rect x={COURT.left} y={COURT.top} width={COURT.width} height={COURT.height} className="ump-court-playing-area"/>
           {mode==='singles'&&<><rect x={COURT.left} y={COURT.top} width={COURT.width} height={COURT.height*SINGLES_INSET} className="ump-court-inactive-alley"/><rect x={COURT.left} y={COURT.top+COURT.height*(1-SINGLES_INSET)} width={COURT.width} height={COURT.height*SINGLES_INSET} className="ump-court-inactive-alley"/></>}
           <rect x={COURT.left} y={COURT.top} width={COURT.width} height={COURT.height} className={'ump-court-line ump-court-doubles-line'+(mode==='singles'?' ump-court-line--muted':'')}/>
           <path d={`M${COURT.left} ${COURT.top+COURT.height*SINGLES_INSET}H${COURT.left+COURT.width}M${COURT.left} ${COURT.top+COURT.height*(1-SINGLES_INSET)}H${COURT.left+COURT.width}`} className="ump-court-line ump-court-singles-line"/>
-          <path d={`M${400-SERVICE_DISTANCE} ${COURT.top+COURT.height*SINGLES_INSET}V${COURT.top+COURT.height*(1-SINGLES_INSET)}M${400+SERVICE_DISTANCE} ${COURT.top+COURT.height*SINGLES_INSET}V${COURT.top+COURT.height*(1-SINGLES_INSET)}M${400-SERVICE_DISTANCE} 230H${400+SERVICE_DISTANCE}`} className="ump-court-line"/>
-          <path d={`M${COURT.left} 230h6M${COURT.left+COURT.width} 230h-6`} className="ump-court-line"/>
-          <rect x="396" y={COURT.top-13} width="8" height={COURT.height+26} className="ump-court-net-shadow"/>
-          <rect x="397" y={COURT.top-10} width="6" height={COURT.height+20} fill={`url(#${netId})`}/>
-          <path d={`M400 ${COURT.top-10}V${COURT.top+COURT.height+10}`} className="ump-court-net-tape"/>
-          <circle cx="400" cy={COURT.top-12} r="4" className="ump-court-net-post"/><circle cx="400" cy={COURT.top+COURT.height+12} r="4" className="ump-court-net-post"/>
+          <path d={`M${CENTER.x-SERVICE_DISTANCE} ${COURT.top+COURT.height*SINGLES_INSET}V${COURT.top+COURT.height*(1-SINGLES_INSET)}M${CENTER.x+SERVICE_DISTANCE} ${COURT.top+COURT.height*SINGLES_INSET}V${COURT.top+COURT.height*(1-SINGLES_INSET)}M${CENTER.x-SERVICE_DISTANCE} ${CENTER.y}H${CENTER.x+SERVICE_DISTANCE}`} className="ump-court-line"/>
+          <path d={`M${COURT.left} ${CENTER.y}h6M${COURT.left+COURT.width} ${CENTER.y}h-6`} className="ump-court-line"/>
+          <rect x={CENTER.x-4} y={COURT.top-13} width="8" height={COURT.height+26} className="ump-court-net-shadow"/>
+          <rect x={CENTER.x-3} y={COURT.top-10} width="6" height={COURT.height+20} fill={`url(#${netId})`}/>
+          <path d={`M${CENTER.x} ${COURT.top-10}V${COURT.top+COURT.height+10}`} className="ump-court-net-tape"/>
+          <circle cx={CENTER.x} cy={COURT.top-12} r="4" className="ump-court-net-post"/><circle cx={CENTER.x} cy={COURT.top+COURT.height+12} r="4" className="ump-court-net-post"/>
         </svg>
         {players.map(player=>{
           const shown=fixedPoint(player),isServing=servingPlayerId===player.id,canSwap=mode==='doubles'&&bySide[player.side].length===2;
           const style={left:((COURT.left+shown.x*COURT.width)/VIEW.width*100)+'%',top:((COURT.top+shown.y*COURT.height)/VIEW.height*100)+'%'} as CSSProperties;
           return <button key={player.id} type="button" className={'ump-court-player ump-court-player--'+player.side+(isServing?' ump-court-player--serving':'')} style={style} disabled={disabled||!canSwap} aria-label={`${player.side.toUpperCase()}方 ${player.name}${isServing?'，发球员':''}${canSwap?'，点击与同队球员换位':'，固定站位'}`} aria-describedby={instructionsId} data-player-id={player.id} data-side-id={player.side} data-fixed-slot={bySide[player.side].findIndex(teammate=>teammate.id===player.id)} onClick={()=>swapTeam(player.side)}>
-            <span className="ump-court-player-meta"><span className="ump-court-side-code">{player.side.toUpperCase()} 方</span>{isServing&&<span className="ump-court-serving"><Ball/><span>发球</span></span>}</span>
+            <span className="ump-court-player-avatar" aria-hidden="true"><Avatar/></span>
             <span className="ump-court-player-name" title={player.name}>{player.name||'待命名球员'}</span>
+            {isServing&&<span className="ump-court-serving" title="发球员"><Ball/><span className="ump-court-sr-only">发球</span></span>}
           </button>;
         })}
       </div>
-      <span className="ump-court-position-note">固定站位示意</span>
+      </div>
     </div>
     <span className="ump-court-sr-only" id={instructionsId}>{mode==='doubles'?'点击任一球员可交换该队两人的固定示意位置，不改变正式发球和接发顺序。站位为示意，没有接入实时定位。':'球员固定示意站位，没有接入实时定位。'}</span>
     <span className="ump-court-sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</span>
