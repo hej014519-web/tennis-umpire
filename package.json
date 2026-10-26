@@ -9,9 +9,14 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "test": "node --test tests/*.test.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p sync-worker/tsconfig.json",
     "build": "vite build && node --input-type=module -e \"import { writeFileSync } from 'node:fs'; writeFileSync('docs/.nojekyll', '');\"",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "sync:dev": "wrangler dev --config sync-worker/wrangler.jsonc",
+    "sync:migrate": "wrangler d1 migrations apply startline-tennis-sync --remote --config sync-worker/wrangler.jsonc",
+    "sync:deploy": "wrangler deploy --config sync-worker/wrangler.jsonc",
+    "build:sync-pages": "node scripts/build-sync-pages.mjs",
+    "sync:deploy-pages": "npm run build:sync-pages && wrangler pages deploy --cwd sync-worker/pages --project-name startline-tennis-sync --branch main"
   },
   "dependencies": {
     "lucide-react": "1.31.0",
@@ -25,6 +30,8 @@
     "@vitejs/plugin-react": "6.0.2",
     "esbuild": "0.28.0",
     "typescript": "5.9.3",
-    "vite": "8.0.13"
+    "vite": "8.0.13",
+    "wrangler": "4.92.0",
+    "miniflare": "4.20260515.0"
   }
 }

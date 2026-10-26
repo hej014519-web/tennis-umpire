@@ -1,17 +1,28 @@
 # StartLine 网球执裁台
 
-面向平板、手机和电脑的独立网球模拟执裁工具。GitHub Pages 发布后，可直接打开：
+面向平板、手机和电脑的网球模拟执裁工具。网页由 GitHub Pages 托管，可直接打开：
 
 **https://hej014519-web.github.io/tennis-umpire/**
 
-无需登录，也不需要服务器账号。支持单打／双打、逐分计分、发球提示、手动球员站位、换边、旋转视角、暂停、撤销、判罚确认及比赛记录导出。使用的是可配置的模拟赛制，正式比赛应先核对主办方批准的规则。
+使用者无需登录。支持单打／双打、逐分计分、发球提示、手动球员站位、换边、旋转视角、暂停、撤销、判罚确认及比赛记录导出。使用的是可配置的模拟赛制，正式比赛应先核对主办方批准的规则。
+
+## 多设备使用
+
+1. 打开网站，点击“共享比赛”，将当前本机比赛创建为共享比赛。
+2. 将“执裁链接”发到自己的另一台设备，可以继续操作同一场比赛；将“观赛链接”发给观众，只能查看。
+3. 其他设备必须打开同一场比赛的完整分享链接。单独发送网站首页不会自动加入某场比赛。
+
+比分、发球、判罚、手动站位、换边和比赛状态共享保存。旋转视角和声音按设备保留。页面在前台约每 2 秒检查更新；切回页面会重新连接，不承诺零延迟。建议一名主裁操作，其他人用观赛链接。两名裁判同时操作时，先提交成功的一次生效，另一台须核对最新比分后再继续。
+
+共享操作收到服务确认后才显示成功。断网或请求结果不明时锁定后续执裁，并保留原请求；使用“重试原操作”确认，不会换一个请求编号再次加分。请勿在未确认前清除浏览器数据。这里的链接本身包含访问权限，执裁链接只发给裁判，不要公开张贴。更换浏览器或设备时需要重新打开分享链接。
 
 ## 记录与隐私
 
-- 记录仅保存在当前设备的当前浏览器中，没有云同步，也不会同步到其他观众或裁判设备。
+- 本机模式仅保存在当前设备的浏览器中；创建共享比赛后，比赛记录会存入本项目的 Cloudflare D1 数据库，通过独立共享链接访问。
 - 不请求定位，不包含真实赛事报名名单。默认姓名和比赛用于模拟体验。
 - 新建比赛会替换当前本机记录；可先通过“导出”保存 JSON 备份。清理浏览器数据或更换浏览器后，本机记录不会自动恢复。
-- GitHub Pages 托管的是静态程序。仓库源码、发布文件与个人设备上的比赛记录彼此独立。
+- GitHub Pages 托管静态程序，Cloudflare Worker 提供共享接口。比赛记录、分享密钥和 Cloudflare 账号凭据不会提交到公开源码；数据库只保存分享密钥的哈希。
+- 云端未设置比赛自动过期或自动删除。建议定期导出重要比赛记录。免费服务额度耗尽或网络不可达时，同步会暂停并显示错误。
 
 ## 本地运行
 
@@ -31,9 +42,32 @@ npm run build
 npm run preview
 ```
 
-测试覆盖独立计分引擎。构建输出到 `docs/`，同时生成 `docs/.nojekyll`；所有发布资源使用相对路径，适配 GitHub 仓库子路径。依赖版本在 `package.json` 固定；已有 `package-lock.json` 时，复现安装可使用 `npm ci`。
+测试覆盖计分引擎、嵌入式浏览器兼容性、同步客户端和真实隔离 D1 环境中的权限、并发和幂等。构建输出到 `docs/`，同时生成 `docs/.nojekyll`；所有发布资源使用相对路径，适配 GitHub 仓库子路径。依赖版本在 `package.json` 固定；复现安装使用 `npm ci`。
 
-主要目录：`src/` 是静态入口与兼容处理，`components/umpire/` 是裁判界面及互动球场，`lib/` 是计分引擎与本机存储适配，`tests/` 是计分测试。项目使用 Vite、React 和 TypeScript。
+主要目录：`src/` 是静态入口与兼容处理，`components/umpire/` 是裁判界面及互动球场，`lib/` 是计分、存储和同步客户端，`sync-worker/` 是共享接口及数据库迁移，`tests/` 是验证。项目使用 Vite、React、TypeScript 和 Cloudflare Workers/D1。
+
+## 部署共享服务
+
+前端仍发布到 GitHub Pages。部署者需要 Cloudflare 账号，观众和裁判不需要。
+
+```sh
+npx wrangler login --scopes account:read user:read workers_scripts:write d1:write pages:write
+npx wrangler d1 create startline-tennis-sync --location apac --config sync-worker/wrangler.jsonc
+```
+
+将返回的数据库 ID 填入 `sync-worker/wrangler.jsonc` 的 `database_id`，再运行：
+
+```sh
+npm run sync:migrate
+npx wrangler pages project create startline-tennis-sync --production-branch main
+npm run sync:deploy-pages
+```
+
+正式共享接口：`https://startline-tennis-sync.pages.dev`。Pages Functions 高级模式复用同一个 Worker 与现有 D1 数据库，只部署接口程序，网页继续由 GitHub 托管。数据库 ID 还须同步到 `sync-worker/pages/wrangler.jsonc`；已有项目更新时直接运行 `npm run sync:deploy-pages`，无需再次创建项目或数据库。
+
+复制 `.env.example` 为 `.env.local`，将 `VITE_SYNC_API_URL` 设置为接口 HTTPS 地址，然后重新检查和构建前端。该地址是公开配置，不能在 `VITE_` 变量中填写账号令牌。留空时仍可使用本机模式。独立 Worker 的可选部署命令保留为 `npm run sync:deploy`；本次网络检查中其默认 `workers.dev` 域名连接超时，因此公开网页采用已验证的 `pages.dev` 地址。
+
+API 提供创建房间、读取房间、原子开赛和命令提交；写入需要独立执裁权限、预期版本和请求编号。D1 事务将版本检查、操作回执和比分一起提交；创建回执可通过原创建密钥恢复。默认只允许本 GitHub Pages 来源和本机开发来源跨域访问。每个网络每小时最多创建 10 场，单次上传上限 1 MiB，房间状态上限 1.5 MB / 5000 条事件。比赛达到上限时会明确拒绝，需导出备份后另建房间。
 
 ## 发布到 GitHub Pages
 

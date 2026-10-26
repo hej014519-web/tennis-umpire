@@ -106,3 +106,36 @@
 /* Keep successful local persistence visible without scrolling to the log. */
 .ump-save-mini{display:inline-flex;align-items:center;gap:4px;color:#748963;font-size:9px;white-space:nowrap}.ump-side-top h3{font-size:15px}.ump-score-button,.ump-main-tools .ump-btn,.ump-court-controls .ump-btn{font-size:13px}
 @media(max-width:650px){.ump-save-mini{font-size:8px}.ump-match-status{margin-left:0}.ump-side-top h3{font-size:12px}.ump-score-button{font-size:10px}.ump-main-tools .ump-btn,.ump-court-controls .ump-btn{font-size:12px}.ump-match-heading{column-gap:8px}.ump-match-heading h1{max-width:195px}}
+/* Shared rooms keep the primary desk unchanged; recovery appears only when needed. */
+.ump-share-entry{gap:5px;width:auto;min-width:60px;font-size:11px;padding:0 7px}
+.ump-sync-notice{display:flex;align-items:center;gap:10px;min-width:0;padding:9px 14px;margin:0 0 12px;border:1px solid #d5dfc8;border-radius:7px;background:#f0f5e4;color:#567145;font-size:12px}
+.ump-sync-notice>svg{flex-shrink:0}
+.ump-sync-notice>p{flex:1;min-width:0;overflow-wrap:anywhere}
+.ump-sync-notice>button{min-height:48px;font-weight:600;text-decoration:underline;text-underline-offset:3px;flex-shrink:0}
+.ump-share-intro{display:flex;gap:14px;align-items:flex-start;margin-bottom:23px;color:#416443}
+.ump-share-intro>svg{flex-shrink:0;margin-top:2px}
+.ump-share-intro strong{font-size:16px;line-height:1.6;font-weight:600}
+.ump-share-intro p{font-size:12px;color:#7d906b;line-height:1.9;margin-top:5px}
+.ump-share-warning{font-size:12px;line-height:1.8;padding:12px 14px;border:1px solid #ead9bd;background:#fff8ed;color:#8a6840;border-radius:6px;margin-bottom:17px;overflow-wrap:anywhere}
+.ump-share-connection{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:17px;font-size:12px;color:#527545}
+.ump-share-connection small{font-size:10px;color:#8c9a7b}
+.ump-share-connection .ump-btn{margin-left:auto;font-size:11px;min-height:44px}
+.ump-share-link{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:11px;padding:17px;border:1px solid #dbe5cc;border-radius:8px;background:#fff;margin-bottom:15px;min-width:0}
+.ump-share-link>div{grid-column:1/-1}
+.ump-share-link strong{display:flex;align-items:center;gap:6px;font-weight:600;color:#476b40;font-size:13px}
+.ump-share-link p{font-size:11px;color:#8a9a79;line-height:1.8;margin-top:5px}
+.ump-share-link-edit{background:#f5f7ef;border-color:#e0e6d6}
+.ump-share-link-edit strong{color:#65795b}
+.ump-share-link label{display:block;min-width:0}
+.ump-share-link input{width:100%;min-width:0;min-height:48px;background:#f7f9f2;border:1px solid #e3e9d9;border-radius:5px;padding:10px;font-size:11px;color:#627855;text-overflow:ellipsis}
+.ump-share-link .ump-btn{font-size:11px;min-height:48px;padding:9px 12px}
+.ump-share-exit{display:flex;align-items:center;gap:18px;border-top:1px solid #e2e8d8;margin-top:24px;padding-top:19px}
+.ump-share-exit p{flex:1;font-size:11px;color:#879777;line-height:1.9}
+.ump-share-exit .ump-btn{font-size:11px;flex-shrink:0}
+.ump-share-recovery{padding:18px;background:#eff4e3;border:1px solid #d7e2c4;border-radius:8px;margin-bottom:20px}
+.ump-share-recovery strong{font-size:14px;color:#567345}
+.ump-share-recovery p{font-size:12px;line-height:1.9;color:#83966c;margin:8px 0 15px}
+.ump-share-join{margin:25px 0 20px;padding-top:22px;border-top:1px solid #e1e7d6}
+.ump-share-join .ump-field{margin-bottom:12px}
+.ump-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:650px){.ump-sync-notice{align-items:flex-start;gap:8px;font-size:11px;padding:10px;flex-wrap:wrap}.ump-sync-notice>p{flex-basis:80%}.ump-sync-notice>button{margin-left:26px;min-height:40px}.ump-share-entry{min-width:42px;padding:0;gap:0}.ump-share-entry>span{display:none}.ump-share-link{grid-template-columns:minmax(0,1fr);padding:14px}.ump-share-link>div{grid-column:auto}.ump-share-link .ump-btn{width:100%}.ump-share-exit{flex-direction:column;align-items:stretch;gap:12px}.ump-share-connection .ump-btn{margin-left:0}.ump-share-intro strong{font-size:15px}}
