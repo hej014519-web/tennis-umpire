@@ -14,7 +14,7 @@ export type CreateRoomResponse = {roomId: string; editKey: string; viewKey: stri
 type RoomRow = {id: string; version: number; match_json: string; title: string; court: string; edit_hash: string; view_hash: string; updated_at: number};
 type CreationReceipt = {creator_hash: string; payload_hash: string; room_id: string};
 const MAX_BODY = 1024 * 1024, MAX_STATE = 1_500_000, MAX_EVENTS = 5000, HOUR = 3_600_000;
-const COMMAND_TYPES = new Set(['configure','start','pause','resume','medical','undo','switchEnds','let','rallyLet','point','fault','movePlayer','retire','finish','formalPenalty','confirmService','setServiceOrder','correctScore','voidEvent','correctEvent']);
+const COMMAND_TYPES = new Set(['configure','start','pause','resume','medical','undo','switchEnds','swapTeamPositions','let','rallyLet','point','fault','movePlayer','retire','finish','formalPenalty','confirmService','setServiceOrder','correctScore','voidEvent','correctEvent']);
 const encoder = new TextEncoder();
 const KEY = /^[A-Za-z0-9_-]{43}$/;
 class ApiError extends Error {constructor(public status: number, message: string, public code: string, public room?: Room) {super(message);}}

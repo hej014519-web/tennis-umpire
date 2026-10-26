@@ -57,6 +57,15 @@ test('dropped ACK replay commits a point once even after later writes; changed p
   const retry = await command(r, {sideId: 'a', type: 'point'}, 4, id); assert.equal(retry.status, 200); assert.equal(retry.headers.get('X-Idempotent-Replay'), '1'); const room = (await retry.json()).room; assert.equal(room.version, 4); assert.deepEqual(room.match.points, {a: 1, b: 1});
   assert.equal((await command(r, {type: 'point', sideId: 'b'}, 4, id)).status, 409); assert.equal((await DB.prepare('SELECT count(*) AS n FROM command_receipts WHERE room_id=? AND request_id=?').bind(r.roomId, id).first()).n, 1);
 });
+test('fixed team swaps commit atomically once, synchronize to viewers and survive imported snapshots', async () => {
+  const r = await started({ip:'192.0.2.12'}), before=structuredClone(r.room.match), id=uid();
+  assert.equal((await command(r,{type:'swapTeamPositions',sideId:'a'},2,id,r.viewKey)).status,403);
+  const moved=await command(r,{type:'swapTeamPositions',sideId:'a'},2,id);assert.equal(moved.status,200,await moved.clone().text());const room=(await moved.json()).room;
+  assert.equal(room.version,3);assert.equal(room.match.revision,before.revision+1);assert.deepEqual(room.match.positions.a1,{x:.18,y:.74});assert.deepEqual(room.match.positions.a2,{x:.18,y:.26});for(const key of ['config','points','sets','serviceCursor','nearSideId'])assert.deepEqual(room.match[key],before[key]);
+  const replay=await command(r,{type:'swapTeamPositions',sideId:'a'},2,id);assert.equal(replay.status,200);assert.equal(replay.headers.get('X-Idempotent-Replay'),'1');assert.deepEqual((await replay.json()).room.match.positions,room.match.positions);assert.deepEqual((await (await get(r)).json()).room.match.positions,room.match.positions);
+  const imported=await create({body:{initial:{match:room.match,title:'虚构换位导入',court:'演示场地'}},ip:'192.0.2.13'});assert.deepEqual(imported.room.match.positions,room.match.positions);
+  assert.equal((await command(r,{type:'undo'},3)).status,200);assert.deepEqual((await (await get(r)).json()).room.match.positions,before.positions);
+});
 test('concurrent CAS accepts one writer, returns latest room to loser and rolls losing receipt back', async () => {
   const r = await started({ip: '192.0.2.6'}), ids = [uid(), uid()]; const responses = await Promise.all(ids.map((id, i) => command(r, {type: 'point', sideId: i ? 'b' : 'a'}, 2, id))); assert.deepEqual(responses.map(x => x.status).sort(), [200, 409]);
   const loser = responses.findIndex(x => x.status === 409), error = await responses[loser].json(); assert.equal(error.code, 'VERSION_CONFLICT'); assert.equal(error.room.version, 3); assert.equal(await DB.prepare('SELECT request_id FROM command_receipts WHERE room_id=? AND request_id=?').bind(r.roomId, ids[loser]).first(), null);

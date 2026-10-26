@@ -1,310 +1,143 @@
-/* The referee desk fills its host viewport, including an iframe viewport. */
-.ump-screen.ump-referee-workspace {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  background: #f4f6f4;
-  color: #20382f;
-  --ump-green: #184b3c;
-  --ump-ink: #20382f;
-  --ump-muted: #68796f;
-}
-.ump-referee-workspace .ump-app {
-  width: 100%;
-  height: 100%;
-  min-height: 100%;
-  max-width: none;
-  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-  gap: 10px;
-}
-.ump-referee-workspace .ump-topbar {
-  min-height: 48px;
-  padding: 0;
-  margin: 0;
-  gap: 12px;
-  border: 0;
-  flex-shrink: 0;
-  flex-wrap: nowrap;
-}
-.ump-referee-workspace .ump-match-heading {
-  border: 0;
-  padding: 0;
-  gap: 3px 10px;
-  min-width: 0;
-  order: 0;
-  flex-basis: auto;
-}
-.ump-referee-workspace .ump-match-heading h1 {
-  max-width: none;
-  font-size: clamp(15px, 1.7vw, 20px);
-  line-height: 1.35;
-  letter-spacing: 0;
-  font-weight: 650;
-}
-.ump-referee-workspace .ump-match-status {font-size: 12px; margin: 0;}
-.ump-referee-workspace .ump-save-mini {font-size: 10px; color: #718176;}
-.ump-referee-workspace .ump-save-mini::before {content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #8a9a8b;}
-.ump-referee-workspace .ump-save-mini[data-save-state="synced"]::before {background: #658a66;}
-.ump-referee-workspace .ump-save-mini:not([data-save-state="error"]) > span {display: none;}
-.ump-referee-workspace .ump-save-mini[data-save-state="error"]::before {background: var(--ump-red);}
-.ump-referee-workspace[data-writing="true"] button:disabled {opacity: .8; cursor: wait;}
-.ump-referee-workspace .ump-top-actions {gap: 6px; margin-left: auto; flex-shrink: 0;}
-.ump-referee-workspace .ump-top-actions .ump-icon {width: 48px; min-height: 48px;}
-.ump-referee-workspace .ump-timer {padding: 0; border: 0; gap: 0 6px;}
-.ump-referee-workspace .ump-timer > span {font-size: clamp(18px, 2.2vw, 24px); letter-spacing: .5px;}
-.ump-referee-workspace .ump-timer > small {display: none;}
-.ump-referee-workspace .ump-icon {width: 48px; min-height: 48px;}
-.ump-referee-workspace .ump-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(230px, 1fr) auto;
-  gap: 10px;
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 560px;
-  align-items: stretch;
-}
-.ump-referee-workspace .ump-court-panel,
-.ump-referee-workspace .ump-score-panel {
-  min-width: 0;
-  min-height: 0 !important;
-  border: 1px solid #dfe5df;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: none;
-}
-.ump-referee-workspace .ump-court-panel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-}
-.ump-referee-workspace .ump-court-panel > .ump-court-heading {
-  padding: 10px 12px 0;
-  gap: 10px;
-  min-height: 38px;
-}
-.ump-referee-workspace .ump-overline,
-.ump-referee-workspace .ump-court-footer,
-.ump-referee-workspace .ump-court-component-heading,
-.ump-referee-workspace .ump-court-legend,
-.ump-referee-workspace .ump-court-help,
-.ump-referee-workspace .ump-ends-hint,
-.ump-referee-workspace .ump-score-heading,
-.ump-referee-workspace .ump-score-labels {display: none;}
-.ump-referee-workspace .ump-court-heading h2 {
-  font-size: 15px;
-  line-height: 1.4;
-  margin: 0;
-  letter-spacing: 0;
-  gap: 8px;
-}
-.ump-referee-workspace .ump-court-heading h2 > span {
-  font-size: 10px;
-  padding: 2px 5px;
-  background: #f1f4f0;
-  color: #6d7e6e;
-}
-.ump-referee-workspace .ump-court-round {gap: 1px;}
-.ump-referee-workspace .ump-court-round strong,
-.ump-referee-workspace .ump-court-round span {font-size: 11px;}
-.ump-referee-workspace .ump-court-stage {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 8px 12px;
-  min-height: 0 !important;
-  min-width: 0;
-  overflow: hidden;
-}
-.ump-referee-workspace .ump-court-stage .ump-court-root {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-}
-.ump-referee-workspace .ump-court-stage .ump-court-help {display: none;}
-.ump-referee-workspace .ump-court-board {box-shadow: none;}
-.ump-referee-workspace .ump-court-controls {
-  display: flex;
-  gap: 8px;
-  margin: 0;
-  padding: 0 12px 10px;
-  flex-wrap: nowrap;
-}
-.ump-referee-workspace .ump-court-controls .ump-btn {
-  min-height: 48px;
-  padding: 8px 14px;
-  font-size: 13px;
-  background: #fff;
-  border-color: #dce4dc;
-}
-.ump-referee-workspace .ump-score-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-content: start;
-  gap: 8px 12px;
-  padding: 10px 12px;
-}
-.ump-referee-workspace .ump-side {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto;
-  align-items: center;
-  gap: 6px;
-  padding: 0 0 8px;
-  border: 0;
-  margin: 0;
-}
-.ump-referee-workspace .ump-side-top {grid-column: 1; grid-row: 1; gap: 7px; min-height: 38px;}
-.ump-referee-workspace .ump-side-mark {width: 28px; height: 28px; font-size: 11px;}
-.ump-referee-workspace .ump-side-top > div > span {font-size: 10px; line-height: 1.3;}
-.ump-referee-workspace .ump-side-top h3 {
-  font-size: clamp(14px, 1.8vw, 19px);
-  line-height: 1.4;
-  margin-top: 2px;
-  overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-.ump-referee-workspace .ump-score-line {
-  grid-column: 1;
-  grid-row: 2;
-  display: grid;
-  grid-template-columns: 30px 34px minmax(60px, 1fr);
-  min-height: 66px;
-  gap: 4px;
-  width: 100%;
-}
-.ump-referee-workspace .ump-player-sub {display: none;}
-.ump-referee-workspace .ump-set-count,
-.ump-referee-workspace .ump-game-count {font-size: 23px; font-weight: 550; line-height: 1.15; color: #54695b;}
-.ump-referee-workspace .ump-set-count::after,
-.ump-referee-workspace .ump-game-count::after {display: block; font-size: 10px; font-weight: 400; color: #87948a; margin-top: 4px;}
-.ump-referee-workspace .ump-set-count::after {content: "盘";}
-.ump-referee-workspace .ump-game-count::after {content: "局";}
-.ump-referee-workspace .ump-point-count {
-  font-size: clamp(54px, 7vw, 76px);
-  line-height: 1;
-  letter-spacing: -2px;
-  font-weight: 600;
-  color: #20382f;
-  text-align: right;
-  padding-right: 4px;
-}
-.ump-referee-workspace .ump-side .ump-score-button {
-  grid-column: 1;
-  grid-row: 3;
-  min-width: 0;
-  min-height: 56px;
-  padding: 10px 12px;
-  font-size: 15px;
-  border-radius: 6px;
-}
-.ump-referee-workspace .ump-score-button > span {font-size: 24px;}
-.ump-referee-workspace .ump-main-tools {grid-column: auto; gap: 8px; margin: 0; align-self: stretch;}
-.ump-referee-workspace .ump-main-tools .ump-btn,
-.ump-referee-workspace .ump-penalty-entry {min-height: 48px; padding: 8px 10px; font-size: 14px; margin: 0;}
-.ump-referee-workspace .ump-penalty-entry {grid-column: auto; align-self: stretch;}
-.ump-referee-workspace .ump-start,
-.ump-referee-workspace .ump-review,
-.ump-referee-workspace .ump-finished {grid-column: 1 / -1; min-height: 48px; margin: 0;}
-.ump-referee-workspace .ump-btn {border-radius: 6px;}
-.ump-referee-workspace .ump-dialog .ump-icon,
-.ump-referee-workspace .ump-dialog button,
-.ump-referee-workspace .ump-dialog a,
-.ump-referee-workspace .ump-sync-notice > button,
-.ump-referee-workspace .ump-alert > button {min-height: 48px;}
-.ump-referee-workspace .ump-check,
-.ump-referee-workspace .ump-profile-options label {min-height: 48px; align-items: center;}
-.ump-referee-workspace .ump-alert,
-.ump-referee-workspace .ump-sync-notice {margin: 0; flex-shrink: 0;}
-.ump-referee-workspace .ump-sync-notice {background: #fff8ec; border-color: #e4d8bf; color: #785c2f;}
-.ump-referee-workspace .ump-dialog > header {padding: 10px 16px;}
-.ump-referee-workspace .ump-dialog-body {padding: 16px;}
-.ump-referee-workspace .ump-tools-status {font-size: 12px; color: #6e806f; margin-bottom: 8px;}
-.ump-referee-workspace .ump-view-events > summary {min-height: 48px; display: flex; align-items: center; cursor: pointer;}
-.ump-referee-workspace .ump-dialog > header h2 {margin: 0; font-size: 19px;}
-.ump-referee-workspace .ump-toast {bottom: max(12px, env(safe-area-inset-bottom));}
+/* Referee desk: scoring first, then the largest court that fits the host. */
+.ump-screen.ump-referee-workspace {width:100%;height:100%;min-height:0;overflow:auto;overscroll-behavior:contain;background:#f1f4f1;color:#20382f;--ump-green:#184b3c;--ump-ink:#20382f;--ump-muted:#68796f;}
+.ump-screen.ump-referee-workspace .ump-app {width:100%;height:100%;min-height:100%;max-width:none;padding:max(6px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));gap:6px;}
+.ump-screen.ump-referee-workspace .ump-topbar {min-height:48px;padding:0;margin:0;gap:10px;border:0;flex-shrink:0;flex-wrap:nowrap;}
+.ump-referee-workspace .ump-match-heading {border:0;padding:0;gap:2px 10px;min-width:0;order:0;flex-basis:auto;}
+.ump-screen.ump-referee-workspace .ump-match-heading h1 {max-width:none;font-size:17px;line-height:1.35;letter-spacing:0;font-weight:650;}
+.ump-referee-workspace .ump-match-status {font-size:11px;margin:0;}
+.ump-referee-workspace .ump-top-actions {gap:6px;margin-left:auto;flex-shrink:0;}
+.ump-referee-workspace .ump-timer {padding:0;border:0;gap:0 6px;}
+.ump-referee-workspace .ump-timer > span {font-size:21px;letter-spacing:.3px;}
+.ump-referee-workspace .ump-timer > small {display:none;}
+.ump-referee-workspace .ump-icon,.ump-referee-workspace .ump-top-actions .ump-icon {width:48px;min-height:48px;}
+.ump-referee-workspace .ump-save-mini {font-size:10px;color:#718176;}
+.ump-referee-workspace .ump-save-mini::before {content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#8a9a8b;}
+.ump-referee-workspace .ump-save-mini[data-save-state="synced"]::before {background:#658a66;}
+.ump-referee-workspace .ump-save-mini:not([data-save-state="error"]) > span {display:none;}
+.ump-referee-workspace .ump-save-mini[data-save-state="error"]::before {background:var(--ump-red);}
+.ump-referee-workspace[data-writing="true"] button:disabled {opacity:.8;}
+.ump-screen.ump-referee-workspace .ump-workspace {display:flex;flex-direction:column;flex:1 1 auto;gap:6px;min-width:0;min-height:0;align-items:stretch;}
+.ump-screen.ump-referee-workspace .ump-score-panel {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:0;min-width:0;min-height:0;background:none;border:0;box-shadow:none;flex-shrink:0;overflow:visible;}
+.ump-screen.ump-referee-workspace .ump-side {display:grid;grid-template-columns:minmax(0,1fr) 128px 112px;grid-template-rows:auto;align-items:center;gap:10px;padding:8px 10px;margin:0;border:1px solid #dfe6df;border-radius:7px;background:white;min-width:0;}
+.ump-referee-workspace .ump-side-top {grid-column:1;grid-row:1;display:flex;align-items:center;gap:7px;min-height:48px;}
+.ump-referee-workspace .ump-side-mark {width:28px;height:28px;font-size:12px;}
+.ump-referee-workspace .ump-side-top > div > span {font-size:11px;line-height:1.3;}
+.ump-screen.ump-referee-workspace .ump-side-top h3 {font-size:18px;line-height:1.35;margin:2px 0 0;overflow-wrap:anywhere;font-weight:650;}
+.ump-referee-workspace .ump-score-line {grid-column:2;grid-row:1;display:grid;grid-template-columns:24px 26px minmax(0,1fr);min-height:56px;gap:4px;width:100%;}
+.ump-referee-workspace .ump-set-count,.ump-referee-workspace .ump-game-count {font-size:23px;font-weight:550;line-height:1.15;color:#54695b;}
+.ump-referee-workspace .ump-set-count::after,.ump-referee-workspace .ump-game-count::after {display:block;font-size:10px;font-weight:400;color:#87948a;margin-top:3px;}
+.ump-referee-workspace .ump-set-count::after {content:"盘";}
+.ump-referee-workspace .ump-game-count::after {content:"局";}
+.ump-referee-workspace .ump-point-count {font-size:52px;line-height:1;letter-spacing:-2px;font-weight:600;color:#20382f;text-align:right;padding:0;}
+.ump-screen.ump-referee-workspace .ump-side .ump-score-button {grid-column:3;grid-row:1;min-width:0;min-height:56px;padding:8px;font-size:15px;border-radius:6px;gap:4px;white-space:nowrap;}
+.ump-referee-workspace .ump-score-button > span {font-size:23px;}
+.ump-referee-workspace .ump-format-strip {grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 8px;background:white;border:1px solid #dfe6df;border-radius:7px;font-size:12px;color:#64766a;}
+.ump-referee-workspace .ump-format-strip .ump-start {width:auto;min-height:48px;margin:0;padding:8px 18px;font-size:14px;flex-shrink:0;}
+.ump-referee-workspace .ump-review,.ump-referee-workspace .ump-finished {grid-column:1 / -1;min-height:48px;margin:0;}
+.ump-screen.ump-referee-workspace .ump-court-panel {display:flex;flex-direction:column;flex:1 1 auto;min-width:0;min-height:220px!important;border:0;border-radius:0;background:none;overflow:visible;box-shadow:none;}
+.ump-screen.ump-referee-workspace .ump-court-panel > .ump-court-heading {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:0;margin:0 0 6px;gap:4px 10px;min-height:48px;flex-shrink:0;}
+.ump-referee-workspace .ump-court-meta {display:flex;align-items:center;gap:12px;min-width:0;}
+.ump-referee-workspace .ump-court-heading h2 {font-size:14px;line-height:1.4;margin:0;letter-spacing:0;gap:6px;white-space:nowrap;}
+.ump-referee-workspace .ump-court-heading h2 > span {font-size:10px;padding:2px 4px;background:#e7ece5;color:#6d7e6e;}
+.ump-referee-workspace .ump-court-round {gap:0;text-align:left;}
+.ump-referee-workspace .ump-court-round strong,.ump-referee-workspace .ump-court-round span {font-size:11px;}
+.ump-referee-workspace .ump-match-tools {display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-left:auto;}
+.ump-referee-workspace .ump-match-tools .ump-btn {min-height:48px;width:auto;margin:0;padding:8px 10px;font-size:12px;gap:5px;border-radius:6px;}
+.ump-referee-workspace .ump-match-tools .ump-penalty-entry {color:#687c6c;}
+.ump-referee-workspace .ump-match-tools .ump-penalty-entry > span {flex:none;}
+.ump-referee-workspace .ump-match-tools .ump-ends-button.ump-highlight {background:#e5eebe;border-color:#b8cb86;color:#3c582b;}
+.ump-referee-workspace .ump-match-tools .ump-key {font-size:9px;margin:0;}
+.ump-screen.ump-referee-workspace .ump-court-stage {display:flex;flex-direction:column;justify-content:center;align-items:center;flex:1 1 auto;min-height:160px!important;min-width:0;padding:5px;overflow:hidden;background:#153f35;border:1px solid #153f35;border-radius:8px;}
+.ump-referee-workspace .ump-court-stage .ump-court-root {width:100%;max-width:none;margin:0;--ump-court-ratio:1.73913;--ump-court-orientation:0deg;--ump-court-plane-width:100%;--ump-court-plane-height:100%;}
+.ump-referee-workspace .ump-court-stage .ump-court-component-heading,.ump-referee-workspace .ump-court-stage .ump-court-view-status,.ump-referee-workspace .ump-court-stage .ump-court-legend,.ump-referee-workspace .ump-court-stage .ump-court-help {display:none;}
+.ump-referee-workspace .ump-court-board {box-shadow:none;}
+.ump-referee-workspace .ump-overline,.ump-referee-workspace .ump-court-footer,.ump-referee-workspace .ump-score-heading,.ump-referee-workspace .ump-score-labels {display:none;}
+.ump-referee-workspace .ump-btn {border-radius:6px;}
+.ump-referee-workspace .ump-dialog .ump-icon,.ump-referee-workspace .ump-dialog button,.ump-referee-workspace .ump-dialog a,.ump-referee-workspace .ump-sync-notice > button,.ump-referee-workspace .ump-alert > button {min-height:48px;}
+.ump-referee-workspace .ump-check,.ump-referee-workspace .ump-profile-options label {min-height:48px;align-items:center;}
+.ump-referee-workspace .ump-alert,.ump-referee-workspace .ump-sync-notice {margin:0;flex-shrink:0;}
+.ump-referee-workspace .ump-sync-notice {background:#fff8ec;border-color:#e4d8bf;color:#785c2f;}
+.ump-referee-workspace .ump-dialog > header {padding:10px 16px;}
+.ump-referee-workspace .ump-dialog-body {padding:16px;}
+.ump-referee-workspace .ump-tools-status {font-size:12px;color:#6e806f;margin-bottom:8px;}
+.ump-referee-workspace .ump-view-events > summary {min-height:48px;display:flex;align-items:center;cursor:pointer;}
+.ump-referee-workspace .ump-dialog > header h2 {margin:0;font-size:19px;}
+.ump-referee-workspace .ump-toast {bottom:max(12px,env(safe-area-inset-bottom));}
 
-/* A size container preserves the court's aspect ratio at any host height. */
-@supports (width: 1cqh) {
-  .ump-referee-workspace .ump-court-stage {container-type: size;}
-  .ump-referee-workspace .ump-court-stage .ump-court-root {width: min(100%, calc(100cqh * 1.73913));}
+@supports (width:1cqh) {
+ .ump-referee-workspace .ump-court-stage {container:ump-stage / size;}
+ .ump-referee-workspace .ump-court-stage .ump-court-root {width:min(100%,calc(100cqh * 1.73913));}
+ @container ump-stage (max-aspect-ratio:1/1) {
+  .ump-referee-workspace .ump-court-stage .ump-court-root {width:min(100%,calc(100cqh * .575));--ump-court-ratio:.575;--ump-court-orientation:90deg;--ump-court-plane-width:173.913043%;--ump-court-plane-height:57.5%;}
+ }
 }
-/* Older embedded browsers can scroll the court instead of clipping its controls. */
-@supports not (width: 1cqh) {
-  .ump-referee-workspace .ump-court-stage {overflow: auto; justify-content: flex-start;}
-  .ump-referee-workspace .ump-court-stage .ump-court-root {flex-shrink: 0;}
+@supports not (width:1cqh) {
+ .ump-referee-workspace .ump-court-stage {overflow:auto;justify-content:flex-start;}
+ .ump-referee-workspace .ump-court-stage .ump-court-root {flex-shrink:0;}
 }
-
-@media (orientation: landscape) and (min-width: 600px) {
-  .ump-referee-workspace .ump-workspace {
-    grid-template-columns: minmax(0, 1fr) minmax(252px, 33%);
-    grid-template-rows: minmax(0, 1fr);
-    min-height: 304px;
-  }
-  .ump-referee-workspace .ump-score-panel {display: flex; flex-direction: column; gap: 8px; overflow: auto;}
-  .ump-referee-workspace .ump-side {
-    grid-template-columns: minmax(0, 1fr) 148px;
-    grid-template-rows: auto auto;
-    gap: 8px;
-    padding: 8px 0 12px;
-    border-bottom: 1px solid #e6ebe5;
-  }
-  .ump-referee-workspace .ump-side-top {grid-column: 1; grid-row: 1;}
-  .ump-referee-workspace .ump-score-line {grid-column: 2; grid-row: 1; grid-template-columns: 24px 28px minmax(0, 1fr); min-height: 70px;}
-  .ump-referee-workspace .ump-point-count {font-size: 60px;}
-  .ump-referee-workspace .ump-side .ump-score-button {grid-column: 1 / -1; grid-row: 2; min-height: 60px;}
-  .ump-referee-workspace .ump-main-tools {flex-shrink: 0;}
-  .ump-referee-workspace .ump-penalty-entry,
-  .ump-referee-workspace .ump-start,
-  .ump-referee-workspace .ump-review {flex-shrink: 0;}
+@media (max-width:1100px) {
+ .ump-screen.ump-referee-workspace .ump-side {grid-template-columns:minmax(0,1fr) 120px 100px;gap:7px;}
+ .ump-screen.ump-referee-workspace .ump-side-top h3 {font-size:16px;}
+ .ump-referee-workspace .ump-point-count {font-size:48px;}
+ .ump-referee-workspace .ump-court-meta {gap:8px;}
+ .ump-referee-workspace .ump-match-tools .ump-btn {padding:8px;font-size:12px;}
 }
-
-@media (orientation: landscape) and (max-height: 650px) {
-  .ump-referee-workspace .ump-app {gap: 6px; padding-top: 4px; padding-bottom: 6px;}
-  .ump-referee-workspace .ump-topbar {min-height: 48px;}
-  .ump-referee-workspace .ump-workspace {gap: 8px;}
-  .ump-referee-workspace .ump-court-panel > .ump-court-heading {padding-top: 4px; min-height: 30px;}
-  .ump-referee-workspace .ump-court-stage {padding: 4px 8px;}
-  .ump-referee-workspace .ump-court-controls {padding: 0 8px 6px;}
-  .ump-referee-workspace .ump-score-panel {padding: 6px 10px; gap: 6px;}
-  .ump-referee-workspace .ump-side {padding: 0 0 6px; gap: 4px;}
-  .ump-referee-workspace .ump-score-line {min-height: 48px;}
-  .ump-referee-workspace .ump-side-top h3 {font-size: 14px;}
-  .ump-referee-workspace .ump-side .ump-score-button {min-height: 48px; font-size: 13px; padding: 7px 10px;}
-  .ump-referee-workspace .ump-point-count {font-size: 50px;}
-  .ump-referee-workspace .ump-set-count,
-  .ump-referee-workspace .ump-game-count {font-size: 20px;}
+@media (max-width:850px) {
+ .ump-screen.ump-referee-workspace .ump-side {grid-template-columns:minmax(0,1fr) 100px;grid-template-rows:auto auto;gap:3px 8px;padding:6px 8px;}
+ .ump-referee-workspace .ump-side-top {grid-column:1;grid-row:1;min-height:44px;gap:5px;}
+ .ump-referee-workspace .ump-score-line {grid-column:2;grid-row:1;grid-template-columns:18px 22px minmax(0,1fr);min-height:48px;gap:3px;}
+ .ump-referee-workspace .ump-set-count,.ump-referee-workspace .ump-game-count {font-size:19px;}
+ .ump-referee-workspace .ump-point-count {font-size:43px;}
+ .ump-screen.ump-referee-workspace .ump-side .ump-score-button {grid-column:1 / -1;grid-row:2;min-height:48px;font-size:14px;padding:6px 8px;}
+ .ump-referee-workspace .ump-court-panel > .ump-court-heading {gap:4px;}
+ .ump-referee-workspace .ump-court-meta {flex:1 1 100%;justify-content:space-between;}
+ .ump-referee-workspace .ump-court-round {flex-direction:row;gap:10px;}
+ .ump-referee-workspace .ump-match-tools {width:100%;margin:0;justify-content:space-between;}
+ .ump-referee-workspace .ump-match-tools .ump-btn {flex:1;padding:6px;font-size:12px;}
 }
-
-@media (max-width: 480px) {
-  .ump-referee-workspace .ump-app {padding-left: 8px; padding-right: 8px; gap: 8px;}
-  .ump-referee-workspace .ump-topbar {gap: 8px;}
-  .ump-referee-workspace .ump-match-heading {gap: 2px 6px;}
-  .ump-referee-workspace .ump-match-heading h1 {font-size: 14px; width: 100%;}
-  .ump-referee-workspace .ump-match-status {font-size: 10px;}
-  .ump-referee-workspace .ump-save-mini {font-size: 9px;}
-  .ump-referee-workspace .ump-timer > svg {display: none;}
-  .ump-referee-workspace .ump-timer {display: block;}
-  .ump-referee-workspace .ump-timer > span {font-size: 17px;}
-  .ump-referee-workspace .ump-workspace {gap: 8px;}
-  .ump-referee-workspace .ump-court-panel > .ump-court-heading {padding-left: 10px; padding-right: 10px; gap: 6px;}
-  .ump-referee-workspace .ump-court-heading h2 {font-size: 13px; gap: 5px;}
-  .ump-referee-workspace .ump-court-heading h2 > span {font-size: 9px;}
-  .ump-referee-workspace .ump-court-round strong,
-  .ump-referee-workspace .ump-court-round span {font-size: 10px;}
-  .ump-referee-workspace .ump-court-controls {padding-left: 8px; padding-right: 8px;}
-  .ump-referee-workspace .ump-court-controls .ump-btn {font-size: 12px; padding: 8px 10px;}
-  .ump-referee-workspace .ump-score-panel {padding: 8px; gap: 8px;}
-  .ump-referee-workspace .ump-side-top {gap: 5px;}
-  .ump-referee-workspace .ump-side-top h3 {font-size: 14px;}
-  .ump-referee-workspace .ump-side-mark {width: 24px; height: 24px; font-size: 10px;}
-  .ump-referee-workspace .ump-main-tools .ump-btn,
-  .ump-referee-workspace .ump-penalty-entry {font-size: 12px; padding: 8px; gap: 6px;}
-  .ump-referee-workspace .ump-dialog {max-height: calc(100dvh - 16px);}
-  .ump-referee-workspace .ump-overlay {padding: 8px;}
+@media (max-width:480px) {
+ .ump-screen.ump-referee-workspace .ump-app {padding-left:5px;padding-right:5px;gap:4px;}
+ .ump-screen.ump-referee-workspace .ump-topbar {gap:5px;}
+ .ump-screen.ump-referee-workspace .ump-match-heading h1 {font-size:13px;width:100%;}
+ .ump-referee-workspace .ump-match-status {font-size:10px;}
+ .ump-referee-workspace .ump-timer > svg {display:none;}
+ .ump-referee-workspace .ump-timer {display:block;}
+ .ump-referee-workspace .ump-timer > span {font-size:16px;}
+ .ump-screen.ump-referee-workspace .ump-side {grid-template-columns:minmax(0,1fr) 82px;gap:4px;padding:5px;}
+ .ump-referee-workspace .ump-side-mark {width:21px;height:21px;font-size:10px;}
+ .ump-referee-workspace .ump-side-top > div > span {font-size:9px;}
+ .ump-screen.ump-referee-workspace .ump-side-top h3 {font-size:13px;line-height:1.3;}
+ .ump-referee-workspace .ump-score-line {grid-template-columns:14px 18px minmax(0,1fr);gap:2px;}
+ .ump-referee-workspace .ump-point-count {font-size:36px;}
+ .ump-referee-workspace .ump-set-count,.ump-referee-workspace .ump-game-count {font-size:16px;}
+ .ump-referee-workspace .ump-side-top {gap:3px;}
+ .ump-referee-workspace .ump-format-strip {font-size:10px;gap:4px;padding:3px 5px;}
+ .ump-referee-workspace .ump-format-strip .ump-start {font-size:12px;padding:6px 9px;}
+ .ump-referee-workspace .ump-court-heading h2 {font-size:12px;}
+ .ump-referee-workspace .ump-court-round strong,.ump-referee-workspace .ump-court-round span {font-size:10px;}
+ .ump-referee-workspace .ump-court-round {gap:5px;}
+ .ump-referee-workspace .ump-match-tools .ump-btn {font-size:11px;gap:3px;padding:6px 4px;}
+ .ump-referee-workspace .ump-match-tools .ump-key {display:none;}
+ .ump-referee-workspace .ump-match-tools .ump-btn > svg {width:15px;height:15px;}
+ .ump-referee-workspace .ump-dialog {max-height:calc(100dvh - 12px);}
+ .ump-referee-workspace .ump-overlay {padding:6px;}
 }
+@media (orientation:landscape) and (max-height:600px) {
+ .ump-screen.ump-referee-workspace .ump-side {grid-template-columns:minmax(0,1fr) 110px 82px;grid-template-rows:auto;padding:4px 6px;gap:5px;}
+ .ump-screen.ump-referee-workspace .ump-side-top h3 {font-size:14px;}
+ .ump-referee-workspace .ump-side-top {grid-column:1;grid-row:1;}
+ .ump-referee-workspace .ump-score-line {grid-column:2;grid-row:1;grid-template-columns:18px 22px minmax(0,1fr);min-height:48px;gap:3px;}
+ .ump-referee-workspace .ump-point-count {font-size:40px;}
+ .ump-screen.ump-referee-workspace .ump-side .ump-score-button {grid-column:3;grid-row:1;min-height:48px;font-size:12px;}
+ .ump-referee-workspace .ump-court-panel > .ump-court-heading {flex-wrap:nowrap;}
+ .ump-referee-workspace .ump-court-meta {flex:0 1 auto;justify-content:flex-start;gap:6px;}
+ .ump-referee-workspace .ump-court-round span {display:none;}
+ .ump-referee-workspace .ump-match-tools {width:auto;flex:none;margin-left:auto;}
+ .ump-referee-workspace .ump-match-tools .ump-btn {flex:none;padding:6px;font-size:11px;}
+ .ump-screen.ump-referee-workspace .ump-court-panel {min-height:160px!important;}
+ .ump-screen.ump-referee-workspace .ump-court-stage {min-height:100px!important;}
+}
+/* Existing spectator links keep a readable scoreboard before the same court. */
+.ump-viewer-workspace .ump-workspace {display:flex;flex-direction:column;}
+.ump-viewer-workspace .ump-match-tools {display:flex;gap:6px;flex-wrap:wrap;}
+.ump-viewer-workspace .ump-court-meta {display:flex;gap:12px;}
