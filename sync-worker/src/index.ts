@@ -14,12 +14,13 @@ export type CreateRoomResponse = {roomId: string; editKey: string; viewKey: stri
 type RoomRow = {id: string; version: number; match_json: string; title: string; court: string; edit_hash: string; view_hash: string; updated_at: number};
 type CreationReceipt = {creator_hash: string; payload_hash: string; room_id: string};
 const MAX_BODY = 1024 * 1024, MAX_STATE = 1_500_000, MAX_EVENTS = 5000, HOUR = 3_600_000;
-const COMMAND_TYPES = new Set(['configure','start','pause','resume','medical','undo','switchEnds','swapTeamPositions','let','rallyLet','point','fault','movePlayer','retire','finish','formalPenalty','confirmService','setServiceOrder','correctScore','voidEvent','correctEvent']);
+const COMMAND_TYPES = new Set(['configure','start','pause','resume','medical','undo','switchEnds','swapTeamPositions','setEndsChangeMode','let','rallyLet','point','fault','movePlayer','retire','finish','formalPenalty','confirmService','setServiceOrder','correctScore','voidEvent','correctEvent']);
 const encoder = new TextEncoder();
 const KEY = /^[A-Za-z0-9_-]{43}$/;
 class ApiError extends Error {constructor(public status: number, message: string, public code: string, public room?: Room) {super(message);}}
 function check(v: unknown, message: string, status = 400, code = 'VALIDATION_ERROR'): asserts v {if (!v) throw new ApiError(status, message, code);}
 function record(v: unknown): v is Record<string, any> {return !!v && typeof v === 'object' && !Array.isArray(v);}
+function auditCommand(v: unknown): boolean {return record(v) && COMMAND_TYPES.has(v.type) && (v.type !== 'setEndsChangeMode' || v.mode === 'automatic' || v.mode === 'manual') && (v.type !== 'correctEvent' || record(v.replacement) && !['correctEvent','voidEvent','undo'].includes(v.replacement.type) && auditCommand(v.replacement));}
 function requestId(v: unknown): asserts v is string {check(typeof v === 'string' && /^[A-Za-z0-9][A-Za-z0-9:._-]{7,127}$/.test(v), '缺少有效请求编号');}
 function text(v: unknown, max: number, empty = false): string {check(typeof v === 'string' && v.length <= max && (empty || v.trim().length > 0), '比赛名称或场地格式无效'); return v.trim();}
 function base64(bytes: Uint8Array): string {return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');}
@@ -74,7 +75,7 @@ function initialMatch(input: unknown, now: number): MatchState {
   // The engine checks score/history integrity. Also validate the audit fields
   // read directly by the public viewer, so a malformed imported command cannot
   // crash another device's timeline.
-  check(match.events.every(e => typeof e.type === 'string' && COMMAND_TYPES.has(e.type) && record(e.command) && COMMAND_TYPES.has(e.command.type) && e.id.length <= 128 && e.result.length <= 6000 && e.scoreBefore.length <= 1000 && e.scoreAfter.length <= 1000 && (e.command.type !== 'formalPenalty' || ['a','b'].includes(e.command.sideId) && typeof e.command.reason === 'string' && e.command.reason.length <= 1000 && ['warning','point','game','disqualification'].includes(e.command.penalty))), '本机比赛审计记录格式无效');
+  check(match.events.every(e => typeof e.type === 'string' && COMMAND_TYPES.has(e.type) && auditCommand(e.command) && e.id.length <= 128 && e.result.length <= 6000 && e.scoreBefore.length <= 1000 && e.scoreAfter.length <= 1000 && (e.command.type !== 'formalPenalty' || ['a','b'].includes(e.command.sideId) && typeof e.command.reason === 'string' && e.command.reason.length <= 1000 && ['warning','point','game','disqualification'].includes(e.command.penalty))), '本机比赛审计记录格式无效');
   check(match.events.every(e => e.at <= now) && (match.runningSince === null || match.runningSince <= now) && match.history.every(h => h.before.runningSince === null || h.before.runningSince <= now), '本机比赛包含未来时间，请校准设备时间后重试');
   check(match.elapsedMs <= now && match.history.every(h => h.before.elapsedMs <= now), '本机累计用时无效');
   // The imported score/audit is retained. The authoritative clock continues

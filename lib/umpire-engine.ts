@@ -1,9 +1,10 @@
 export type SideId='a'|'b';
+export type EndsChangeMode='automatic'|'manual';
 export type Player={id:string;name:string;sideId:SideId};
 export type PenaltyProfile={id:string;label:string;confirmed:boolean;pointPenalty:boolean;gamePenalty:boolean;disqualification:boolean;gamePenaltyService:'review'|'advance'};
 export type MatchConfig={mode:'singles'|'doubles';players:Player[];sideNames:{a:string;b:string};bestOf:1|3;gamesPerSet:4|6;tiebreakAt:4|6;deuce:'advantage'|'no-ad';serviceOrder:string[];firstServerId:string;penaltyProfile:PenaltyProfile;ruleLabel?:string;initialNearSide?:SideId};
 export type SetScore={a:number;b:number;winner?:SideId;tiebreakPoints?:{a:number;b:number}};
-export type CoreState={status:'scheduled'|'live'|'paused'|'medical'|'completed';sets:SetScore[];points:{a:number;b:number};tiebreak:boolean;serviceCursor:number;tiebreakFirstCursor:number;faults:0|1;nearSideId:SideId;positions:Record<string,{x:number;y:number}>;endsChangePending?:boolean;winner?:SideId;endReason?:'score'|'retirement'|'disqualification'|'manual';serviceReviewRequired:boolean;elapsedMs:number;runningSince:number|null};
+export type CoreState={status:'scheduled'|'live'|'paused'|'medical'|'completed';sets:SetScore[];points:{a:number;b:number};tiebreak:boolean;serviceCursor:number;tiebreakFirstCursor:number;faults:0|1;nearSideId:SideId;positions:Record<string,{x:number;y:number}>;endsChangeMode?:EndsChangeMode;endsChangePending?:boolean;winner?:SideId;endReason?:'score'|'retirement'|'disqualification'|'manual';serviceReviewRequired:boolean;elapsedMs:number;runningSince:number|null};
 export type MatchEvent={id:string;revision:number;at:number;type:string;command:Command;scoreBefore:string;scoreAfter:string;result:string;voided:boolean;correctedBy?:string;replaces?:string};
 export type MatchState=CoreState&{version:1;config:MatchConfig;revision:number;events:MatchEvent[];history:{eventId:string;before:CoreState;configBefore?:MatchConfig}[]};
 export type Command=
@@ -13,6 +14,7 @@ export type Command=
  |{type:'fault';kind?:'service'|'foot'}
  |{type:'movePlayer';playerId:string;x:number;y:number}
  |{type:'swapTeamPositions';sideId:SideId}
+ |{type:'setEndsChangeMode';mode:EndsChangeMode}
  |{type:'retire';sideId:SideId;reason:string}
  |{type:'finish';winner:SideId;reason:string}
  |{type:'formalPenalty';sideId:SideId;penalty:'warning'|'point'|'game'|'disqualification';reason:string}
@@ -44,7 +46,10 @@ export function defaultDemoConfig(mode:MatchConfig['mode']='doubles'):MatchConfi
  const players:Player[]=[{id:'a1',name:'林沐',sideId:'a'},...(mode==='doubles'?[{id:'a2',name:'周宁',sideId:'a'}as Player]:[]),{id:'b1',name:'陈屿',sideId:'b'},...(mode==='doubles'?[{id:'b2',name:'许言',sideId:'b'}as Player]:[])];
  return{mode,players,sideNames:{a:'晴川队',b:'松庭队'},bestOf:3,gamesPerSet:6,tiebreakAt:6,deuce:'advantage',serviceOrder:mode==='doubles'?['a1','b1','a2','b2']:['a1','b1'],firstServerId:'a1',penaltyProfile:clone(DEMO_PENALTY_PROFILE),ruleLabel:'虚构平板演示规则，非本赛事正式规程',initialNearSide:'a'};
 }
-export function createMatch(config:MatchConfig):MatchState{validateConfig(config);return{version:1,config:clone(config),revision:0,status:'scheduled',sets:[{a:0,b:0}],points:{a:0,b:0},tiebreak:false,serviceCursor:config.serviceOrder.indexOf(config.firstServerId),tiebreakFirstCursor:config.serviceOrder.indexOf(config.firstServerId),faults:0,nearSideId:config.initialNearSide||'a',positions:Object.fromEntries(config.players.map(p=>[p.id,{x:p.sideId==='a'?.22:.78,y:config.mode==='singles'?.5:p.id===config.players.find(q=>q.sideId===p.sideId)?.id?.3:.7}])),endsChangePending:false,serviceReviewRequired:false,elapsedMs:0,runningSince:null,events:[],history:[]};}
+export function createMatch(config:MatchConfig):MatchState{validateConfig(config);return{version:1,config:clone(config),revision:0,status:'scheduled',sets:[{a:0,b:0}],points:{a:0,b:0},tiebreak:false,serviceCursor:config.serviceOrder.indexOf(config.firstServerId),tiebreakFirstCursor:config.serviceOrder.indexOf(config.firstServerId),faults:0,nearSideId:config.initialNearSide||'a',positions:Object.fromEntries(config.players.map(p=>[p.id,{x:p.sideId==='a'?.22:.78,y:config.mode==='singles'?.5:p.id===config.players.find(q=>q.sideId===p.sideId)?.id?.3:.7}])),endsChangeMode:'automatic',endsChangePending:false,serviceReviewRequired:false,elapsedMs:0,runningSince:null,events:[],history:[]};}
+// Version-1 snapshots from before automatic switching must retain their old
+// manual behavior until the official deliberately changes the shared mode.
+export function endsChangeMode(s:Pick<CoreState,'endsChangeMode'>):EndsChangeMode{return s.endsChangeMode||'manual';}
 export function matchElapsed(s:MatchState,now=Date.now()){check(Number.isFinite(now)&&now>=0,'计时时间无效');return s.elapsedMs+(s.runningSince===null?0:Math.max(0,now-s.runningSince));}
 export function serverPlayerId(s:MatchState):string{if(s.serviceReviewRequired)return'';const n=s.points.a+s.points.b,index=s.tiebreak?(s.tiebreakFirstCursor+Math.floor((n+1)/2))%s.config.serviceOrder.length:s.serviceCursor;return s.config.serviceOrder[index];}
 export function scoreLabels(s:Pick<MatchState,'points'|'tiebreak'>):{a:string;b:string}{if(s.tiebreak)return{a:String(s.points.a),b:String(s.points.b)};const{a,b}=s.points;if(a>=3&&b>=3)return a===b?{a:'40',b:'40'}:a>b?{a:'AD',b:'40'}:{a:'40',b:'AD'};const labels=['0','15','30','40'];return{a:labels[a]||'AD',b:labels[b]||'AD'};}
@@ -69,7 +74,7 @@ function scoreCheck(sets:SetScore[],points:{a:number;b:number},tb:boolean,c:Matc
  if(tb)check(!(Math.max(points.a,points.b)>=7&&Math.abs(points.a-points.b)>=2),'抢七已经结束，须结算该盘');else check(!(Math.max(points.a,points.b)>=4&&(c.deuce==='no-ad'||Math.abs(points.a-points.b)>=2)),'该局已结束，须结算局分');return undefined;
 }
 function setServer(s:MatchState,id:string){const idx=s.config.serviceOrder.indexOf(id);check(idx>=0,'发球员不在固定名单中');s.serviceCursor=idx;if(s.tiebreak)s.tiebreakFirstCursor=(idx-Math.floor((s.points.a+s.points.b+1)/2)%s.config.serviceOrder.length+s.config.serviceOrder.length)%s.config.serviceOrder.length;}
-function restoreCore(s:MatchState,before:CoreState,now:number){const elapsed=matchElapsed(s,now);for(const key of ['winner','endReason','endsChangePending']as const)delete s[key];Object.assign(s,clone(before));s.elapsedMs=before.status==='scheduled'?0:elapsed;s.runningSince=before.status==='live'?now:null;}
+function restoreCore(s:MatchState,before:CoreState,now:number){const elapsed=matchElapsed(s,now);for(const key of ['winner','endReason','endsChangeMode','endsChangePending']as const)delete s[key];Object.assign(s,clone(before));s.elapsedMs=before.status==='scheduled'?0:elapsed;s.runningSince=before.status==='live'?now:null;}
 function lastHistory(s:MatchState,eventId?:string){const h=s.history.at(-1);check(h&&(!eventId||h.eventId===eventId),'该事件不是最近可撤销操作，请先撤销后续操作；较早快照可能已归档');return h;}
 export function applyCommand(previous:MatchState,command:Command,now=Date.now()):MatchState{
  check(previous?.version===1&&Number.isFinite(now)&&now>=0&&(!previous.events.length||now>=previous.events.at(-1)!.at),'状态版本或操作时间无效');check(command&&typeof command.type==='string','操作无效');let raw:string;try{raw=JSON.stringify(command);}catch{throw new Error('操作包含循环引用');}check(raw!.length<=30000,'操作内容过大');const s=clone(previous);s.endsChangePending=endsChangeDue(previous);const before=core(s),configBefore=clone(s.config),beforeLabel=describeScore(s);let result='';
@@ -79,7 +84,7 @@ export function applyCommand(previous:MatchState,command:Command,now=Date.now())
   result=(command.type==='undo'?'撤销最近操作':'作废事件：'+command.reason)+'；恢复至 '+describeScore(s);
  }else{
   switch(command.type){
-   case'configure':check(s.status==='scheduled','仅赛前可配置规则');Object.assign(s,createMatch(command.config),{events:s.events,history:s.history,revision:s.revision});result='更新赛前配置';break;
+   case'configure':check(s.status==='scheduled','仅赛前可配置规则');Object.assign(s,createMatch(command.config),{endsChangeMode:endsChangeMode(s),events:s.events,history:s.history,revision:s.revision});result='更新赛前配置';break;
    case'start':check(s.status==='scheduled','比赛已经开始');check(s.config.penaltyProfile.confirmed,'请先明确确认演示处罚profile');s.status='live';s.runningSince=now;result='开始比赛；'+(s.config.ruleLabel||'演示规则，非赛事正式规程');break;
    case'pause':check(s.status==='live','比赛当前未在进行');freeze(s,now);s.status='paused';result='暂停计时';break;
    case'medical':check(s.status==='live'||s.status==='paused','当前不能进入医疗暂停');freeze(s,now);s.status='medical';result='医疗暂停；不自动结束或自动处罚';break;
@@ -88,6 +93,7 @@ export function applyCommand(previous:MatchState,command:Command,now=Date.now())
    case'fault':{check(s.status==='live'&&!s.serviceReviewRequired,'当前不能记录发球失误');check(command.kind===undefined||['service','foot'].includes(command.kind),'发球失误类型无效');const server=s.config.players.find(p=>p.id===serverPlayerId(s))!;if(s.faults===0){s.faults=1;result=(command.kind==='foot'?'一发脚误':'一发失误')+'，改二发';}else{point(s,other(server.sideId),now);result=(command.kind==='foot'?'二发脚误':'双误')+'，'+s.config.sideNames[other(server.sideId)]+'得1分';}break;}
    case'let':case'rallyLet':check(s.status==='live'&&!s.serviceReviewRequired,'当前不能重发');if(command.type==='rallyLet')s.faults=0;result=command.type==='let'?'发球Let：本次发球重发，保留已有一发失误':'整分重赛：恢复一发，不改变已记分数';break;
    case'switchEnds':s.nearSideId=other(s.nearSideId);s.endsChangePending=false;result='确认交换半场；身份、比分、发球次序及逻辑坐标保持不变';break;
+   case'setEndsChangeMode':{check(command.mode==='automatic'||command.mode==='manual','换边模式无效');check(s.status!=='completed','比赛结束后不能修改换边模式');const previousMode=endsChangeMode(s);s.endsChangeMode=command.mode;result=command.mode==='automatic'?'使用自动换边：规则节点随计分一并结算':'使用手动换边：规则节点提示后由裁判确认';if(previousMode==='manual'&&command.mode==='automatic'&&s.endsChangePending){s.nearSideId=other(s.nearSideId);s.endsChangePending=false;result+='；已执行当前待确认换边';}break;}
    case'movePlayer':check(Object.hasOwn(s.positions,command.playerId)&&Number.isFinite(command.x)&&command.x>=0&&command.x<=1&&Number.isFinite(command.y)&&command.y>=0&&command.y<=1,'球员或坐标无效（0–1）');s.positions[command.playerId]={x:command.x,y:command.y};result='手动调整'+s.config.players.find(p=>p.id===command.playerId)!.name+'的站位';break;
    case'swapTeamPositions':{check(s.status!=='completed'&&s.config.mode==='doubles'&&sideOK(command.sideId),'仅未结束的双打比赛可以队内示意换位');const team=s.config.players.filter(p=>p.sideId===command.sideId).sort((p,q)=>s.positions[p.id].y-s.positions[q.id].y);check(team.length===2,'队内球员名单不完整');const x=command.sideId==='a'?.18:.82;s.positions[team[0].id]={x,y:.74};s.positions[team[1].id]={x,y:.26};result=s.config.sideNames[command.sideId]+'队内示意换位；不改变身份、比分、发球和接发球轮次';break;}
    case'retire':check(s.status!=='scheduled'&&s.status!=='completed'&&sideOK(command.sideId),'当前不能退赛');reason(command.reason);complete(s,other(command.sideId),'retirement',now);result=s.config.sideNames[command.sideId]+'退赛：'+command.reason+'；对方获胜';break;
@@ -95,16 +101,19 @@ export function applyCommand(previous:MatchState,command:Command,now=Date.now())
    case'formalPenalty':{check(s.status!=='scheduled'&&s.status!=='completed'&&sideOK(command.sideId),'当前不能处罚');reason(command.reason);const p=s.config.penaltyProfile;check(p.confirmed,'处罚profile尚未确认');const awarded=other(command.sideId);if(command.penalty==='warning')result='明确警告，不改变比分';else if(command.penalty==='point'){check(p.pointPenalty,'当前profile不允许罚分');point(s,awarded,now);result='明确罚1分，'+s.config.sideNames[awarded]+'得分';}else if(command.penalty==='game'){check(p.gamePenalty,'当前profile不允许罚局');game(s,awarded,now,p.gamePenaltyService==='advance');result='明确罚1局，'+s.config.sideNames[awarded]+'得局';if(p.gamePenaltyService==='review'&&!s.winner){freeze(s,now);s.status='paused';s.serviceReviewRequired=true;result+='；已暂停，须人工核对并确认下一发球员';}}else{check(command.penalty==='disqualification'&&p.disqualification,'取消资格操作未获profile允许');complete(s,awarded,'disqualification',now);result=s.config.sideNames[command.sideId]+'取消资格，对方获胜';}result+='：'+command.reason;break;}
    case'confirmService':check(s.serviceReviewRequired&&s.status==='paused','当前没有待核对发球次序');setServer(s,command.serverId);s.serviceReviewRequired=false;result='已人工确认下一发球员，需明确恢复比赛';break;
    case'setServiceOrder':{const last=s.sets.at(-1)!;check(s.status==='scheduled'||s.sets.length>1&&last.a===0&&last.b===0&&s.points.a===0&&s.points.b===0&&!s.tiebreak&&s.status!=='completed','只能赛前或新盘尚未开始时调整队内发球次序');validateOrder(s.config,command.serviceOrder,command.firstServerId);const expected=s.config.players.find(p=>p.id===serverPlayerId(s))?.sideId,chosen=s.config.players.find(p=>p.id===command.firstServerId)!.sideId;check(s.status==='scheduled'||expected===chosen,'新盘先发球队必须接续上盘规则，队内可以重新选择发球员');s.config.serviceOrder=[...command.serviceOrder];s.config.firstServerId=command.firstServerId;s.serviceCursor=s.config.serviceOrder.indexOf(command.firstServerId);s.tiebreakFirstCursor=s.serviceCursor;result='明确设置本盘发球轮次';break;}
-   case'correctScore':{check(s.status!=='scheduled'&&(!s.endReason||s.endReason==='score'),'请先撤销退赛、取消资格或手动终止，再校正比分');reason(command.reason);const sets=clone(command.sets),winner=scoreCheck(sets,command.points,command.tiebreak,s.config);s.sets=sets;s.points=clone(command.points);s.tiebreak=command.tiebreak;s.faults=0;s.serviceReviewRequired=false;setServer(s,command.serverId);delete s.winner;delete s.endReason;if(winner)complete(s,winner,'score',now);else{freeze(s,now);s.status='paused';}result='人工校正比分并明确发球员，已暂停待恢复：'+command.reason;break;}
+   case'correctScore':{check(s.status!=='scheduled'&&(!s.endReason||s.endReason==='score'),'请先撤销退赛、取消资格或手动终止，再校正比分');reason(command.reason);const sets=clone(command.sets),winner=scoreCheck(sets,command.points,command.tiebreak,s.config);s.sets=sets;s.points=clone(command.points);s.tiebreak=command.tiebreak;s.faults=0;s.serviceReviewRequired=false;s.endsChangePending=false;setServer(s,command.serverId);delete s.winner;delete s.endReason;if(winner)complete(s,winner,'score',now);else{freeze(s,now);s.status='paused';}result='人工校正比分并明确发球员，已暂停待恢复；场地保持不变，已清除旧换边提示，须人工核对半场：'+command.reason;break;}
    default:throw new Error('未知比赛操作');
   }
  }
- // Rule 10 prompts remain pending through ordinary points, pauses and records.
- // A completed tie-break is one completed game: do not also count its last
- // point as a second change of ends. The official only confirms the actual
- // change via switchEnds; scoring never moves a team to the opposite half.
- if(command.type==='correctScore'&&beforeLabel!==describeScore(s))s.endsChangePending=changeEndsAtScore(s);
- else if(!['undo','voidEvent','configure','switchEnds'].includes(command.type)&&crossedEndsBoundary(before,s))s.endsChangePending=true;
+ // Rule 10 is resolved inside this same command, including penalties and
+ // double faults. The shared room therefore stores one score/half change and
+ // a replay cannot independently switch again. A terminal tie-break is one
+ // completed game, never both a six-point change and a second game change.
+ if(s.status==='completed')s.endsChangePending=false;
+ else if(['point','fault','formalPenalty'].includes(command.type)&&crossedEndsBoundary(before,s)){
+  if(endsChangeMode(s)==='automatic'){s.nearSideId=other(s.nearSideId);s.endsChangePending=false;result+='；依据规则自动换边';}
+  else s.endsChangePending=true;
+ }
  if(s.endsChangePending===undefined)s.endsChangePending=endsChangeDue(s);
  s.revision=previous.revision+1;const id=crypto.randomUUID();s.events.push({id,revision:s.revision,at:now,type:command.type,command:clone(command),scoreBefore:beforeLabel,scoreAfter:describeScore(s),result,voided:false});
  if(!['undo','voidEvent'].includes(command.type)){s.history.push({eventId:id,before,...(['configure','setServiceOrder'].includes(command.type)?{configBefore}:{})});s.history=s.history.slice(-HISTORY_LIMIT);}
@@ -131,6 +140,7 @@ export function endsChangeDue(s:MatchState):boolean{
 function validateCoreSnapshot(s:CoreState,c:MatchConfig){
  check(s&&['scheduled','live','paused','medical','completed'].includes(s.status)&&sideOK(s.nearSideId)&&integer(s.faults,1)&&typeof s.serviceReviewRequired==='boolean'&&Number.isFinite(s.elapsedMs)&&s.elapsedMs>=0&&(s.runningSince===null||Number.isFinite(s.runningSince)&&s.runningSince>=0),'快照状态或计时无效');
  check(s.endsChangePending===undefined||typeof s.endsChangePending==='boolean','快照换边提示状态无效');
+ check(s.endsChangeMode===undefined||s.endsChangeMode==='automatic'||s.endsChangeMode==='manual','快照换边模式无效');
  check(s.status==='live'?s.runningSince!==null:s.runningSince===null,'快照计时状态不一致');
  check(integer(s.serviceCursor,c.players.length-1)&&integer(s.tiebreakFirstCursor,c.players.length-1),'快照发球轮次无效');
  check(s.positions&&typeof s.positions==='object'&&Object.keys(s.positions).length===c.players.length,'快照球员坐标名单无效');
