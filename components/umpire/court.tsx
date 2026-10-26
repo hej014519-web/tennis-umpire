@@ -13,11 +13,11 @@ export type UmpireCourtProps={
   /** True when the parent rotates the entire application by 180 degrees. */
   displayInverted?:boolean;
   disabled?:boolean;
-  onMove:(id:string,x:number,y:number)=>void;
+  onMove:(id:string,x:number,y:number)=>void|Promise<boolean>;
 };
 
 type Point={x:number;y:number};
-type Preview=Point&{id:string};
+type Preview=Point&{id:string;settled?:boolean};
 type Drag={id:string;pointerId:number;target:HTMLButtonElement;origin:Point;offset:Point;startX:number;startY:number;moved:boolean};
 type KeyMove={id:string;origin:Point;point:Point};
 const VIEW={width:800,height:460};
@@ -47,26 +47,40 @@ function Ball(){return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="1
 export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,viewRotated,displayInverted=false,disabled=false,onMove}:UmpireCourtProps){
   const [selectedId,setSelectedId]=useState(''),[preview,setPreview]=useState<Preview|null>(null),[announcement,setAnnouncement]=useState('');
   const board=useRef<HTMLDivElement>(null),drag=useRef<Drag|null>(null),keyMove=useRef<KeyMove|null>(null);
+  const previewVersion=useRef(0);
   const id=useId().replace(/:/g,'');
   const instructionsId='ump-court-instructions-'+id,netId='ump-court-net-'+id;
   const selected=players.find(p=>p.id===selectedId),serving=players.find(p=>p.id===servingPlayerId);
   const mirrored=endsSwapped!==viewRotated;
   useEffect(()=>{
     // A view/ends change or a temporary lock cancels only the unfinished gesture.
-    const current=drag.current;drag.current=null;keyMove.current=null;release(current);setPreview(null);
+    const current=drag.current;drag.current=null;keyMove.current=null;release(current);clearPreview();
   },[disabled,endsSwapped,viewRotated,displayInverted]);
   useEffect(()=>{
     if(selectedId&&!players.some(p=>p.id===selectedId))setSelectedId('');
-    if(drag.current&&!players.some(p=>p.id===drag.current!.id)){const old=drag.current;drag.current=null;release(old);setPreview(null);}
-    if(keyMove.current&&!players.some(p=>p.id===keyMove.current!.id)){keyMove.current=null;setPreview(null);}
+    if(drag.current&&!players.some(p=>p.id===drag.current!.id)){const old=drag.current;drag.current=null;release(old);clearPreview();}
+    if(keyMove.current&&!players.some(p=>p.id===keyMove.current!.id)){keyMove.current=null;clearPreview();}
+    if(preview&&!players.some(p=>p.id===preview.id))clearPreview();
   },[players,selectedId]);
-  useEffect(()=>()=>{release(drag.current);drag.current=null;keyMove.current=null;},[]);
+  // Clear acknowledged previews after React commits the authoritative player props.
+  useEffect(()=>{if(preview?.settled)setPreview(null);},[preview]);
+  useEffect(()=>()=>{previewVersion.current++;release(drag.current);drag.current=null;keyMove.current=null;},[]);
 
+  function clearPreview(){previewVersion.current++;setPreview(null);}
   function commit(playerId:string,origin:Point,point:Point){
-    const next=cleanPoint(point);if(!changed(origin,next))return;
-    onMove(playerId,next.x,next.y);
-    const player=players.find(p=>p.id===playerId),shown=displayPoint(next,endsSwapped,viewRotated);
-    setAnnouncement(`${player?.side==='a'?'A':'B'}方${player?.name||'球员'}站位已调整，画面横向${Math.round(shown.x*100)}%，纵向${Math.round(shown.y*100)}%。`);
+    const next=cleanPoint(point);if(!changed(origin,next)){clearPreview();return;}
+    const version=++previewVersion.current;
+    setPreview({id:playerId,...next});
+    const settle=(saved:boolean|void)=>{
+      if(version!==previewVersion.current)return;
+      if(saved===false){clearPreview();return;}
+      setPreview(current=>current?.id===playerId?{...current,settled:true}:current);
+      const player=players.find(p=>p.id===playerId),shown=displayPoint(next,endsSwapped,viewRotated);
+      setAnnouncement(`${player?.side==='a'?'A':'B'}方${player?.name||'球员'}站位已调整，画面横向${Math.round(shown.x*100)}%，纵向${Math.round(shown.y*100)}%。`);
+    };
+    // Only the local marker is previewed; scores and match state still await confirmation.
+    try{Promise.resolve(onMove(playerId,next.x,next.y)).then(settle,()=>settle(false));}
+    catch{settle(false);}
   }
   function positionFromPointer(clientX:number,clientY:number,offset:Point={x:0,y:0}){
     const rect=board.current?.getBoundingClientRect();if(!rect)return null;
@@ -77,7 +91,7 @@ export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,vi
   function startDrag(e:PointerEvent<HTMLButtonElement>,player:CourtPlayer){
     if(disabled||!e.isPrimary||e.button!==0)return;
     e.stopPropagation();e.preventDefault();e.currentTarget.focus({preventScroll:true});select(player);
-    const old=drag.current;drag.current=null;release(old);keyMove.current=null;setPreview(null);
+    const old=drag.current;drag.current=null;release(old);keyMove.current=null;clearPreview();
     const rect=board.current?.getBoundingClientRect();if(!rect)return;
     const origin=cleanPoint(player),shown=displayPoint(origin,endsSwapped,viewRotated),pointer=pointerDisplayPoint(e.clientX,e.clientY,rect,displayInverted);
     drag.current={id:player.id,pointerId:e.pointerId,target:e.currentTarget,origin,offset:{x:shown.x-pointer.x,y:shown.y-pointer.y},startX:e.clientX,startY:e.clientY,moved:false};
@@ -94,20 +108,21 @@ export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,vi
     const current=drag.current;if(!current||current.pointerId!==e.pointerId)return;e.stopPropagation();
     const moved=current.moved||Math.hypot(e.clientX-current.startX,e.clientY-current.startY)>=5;
     const next=positionFromPointer(e.clientX,e.clientY,current.offset);
-    drag.current=null;release(current);setPreview(null);
-    if(moved&&next&&!disabled)commit(current.id,current.origin,next);
+    drag.current=null;release(current);
+    if(moved&&next&&!disabled)commit(current.id,current.origin,next);else clearPreview();
   }
   function cancelDrag(e:PointerEvent<HTMLButtonElement>){
     const current=drag.current;if(!current||current.pointerId!==e.pointerId)return;
-    drag.current=null;release(current);setPreview(null);
+    drag.current=null;release(current);clearPreview();
   }
-  function finishKeyboard(){const current=keyMove.current;if(!current)return;keyMove.current=null;setPreview(null);if(!disabled)commit(current.id,current.origin,current.point);}
+  function finishKeyboard(){const current=keyMove.current;if(!current)return;keyMove.current=null;if(!disabled)commit(current.id,current.origin,current.point);else clearPreview();}
   function keyboard(e:KeyboardEvent<HTMLButtonElement>,player:CourtPlayer){
     if(disabled)return;
-    if(e.key==='Escape'){e.preventDefault();keyMove.current=null;const old=drag.current;drag.current=null;release(old);setPreview(null);setSelectedId('');setAnnouncement('已取消站位调整。');return;}
+    if(e.key==='Escape'){e.preventDefault();keyMove.current=null;const old=drag.current;drag.current=null;release(old);clearPreview();setSelectedId('');setAnnouncement('已取消站位调整。');return;}
     const directions:Record<string,Point>={ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1}};
     const direction=directions[e.key];if(!direction)return;e.preventDefault();e.stopPropagation();
     if(drag.current)return;
+    if(!keyMove.current)previewVersion.current++;
     setSelectedId(player.id);
     const current=keyMove.current?.id===player.id?keyMove.current:{id:player.id,origin:cleanPoint(player),point:cleanPoint(player)};
     const shown=displayPoint(current.point,endsSwapped,viewRotated),step=e.shiftKey?0.08:0.02;
