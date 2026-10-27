@@ -9,7 +9,6 @@ import UmpireCourt from './court';
 import './umpire.css';
 
 const SYNC_API_URL=String(import.meta.env.VITE_SYNC_API_URL||'');
-const COURT_VIEW_KEY='startline:umpire:court-projection:v1';
 type Panel='share'|'setup'|'penalty'|'history'|'more'|'correct'|'manage'|'rules'|'service'|'order'|null;
 type Confirm={title:string;body:string;danger?:boolean;label?:string;run:()=>void};
 const statusText:Record<MatchState['status'],string>={scheduled:'待开赛',live:'比赛进行中',paused:'已暂停',medical:'医疗暂停',completed:'比赛已结束'};
@@ -32,7 +31,7 @@ function Field({label,children}:{label:string;children:ReactNode}){return <label
 export default function UmpireApp(){
  const [session,setSession]=useState<UmpireSession|null>(null),[panel,setPanel]=useState<Panel>(null),[confirm,setConfirm]=useState<Confirm|null>(null),[notice,setNotice]=useState(''),[storageError,setStorageError]=useState(''),[loadError,setLoadError]=useState(''),[online,setOnline]=useState(true),[conflict,setConflict]=useState(false),[now,setNow]=useState(0),[fullscreen,setFullscreen]=useState(false);
  const [syncState,setSyncState]=useState<SyncState|null>(null),[syncLoadError,setSyncLoadError]=useState('');
- const [courtProjection,setCourtProjection]=useState<'2d'|'2.5d'>('2d'),[scoreRepositioning,setScoreRepositioning]=useState(false);
+ const [scoreRepositioning,setScoreRepositioning]=useState(false);
  const displaySides=courtDisplaySides(session?.match.nearSideId||'a',Boolean(session?.inverted)),displayOrderKey=displaySides.join(':');
  const scoreOrder=useRef(displayOrderKey),scoreGuardUntil=useRef(0);
  useLayoutEffect(()=>{if(scoreOrder.current===displayOrderKey)return;scoreOrder.current=displayOrderKey;scoreGuardUntil.current=Date.now()+400;setScoreRepositioning(true);const timer=setTimeout(()=>setScoreRepositioning(false),400);return()=>clearTimeout(timer);},[displayOrderKey]);
@@ -46,7 +45,6 @@ export default function UmpireApp(){
   localSession.current=version;latest.current=version;setSession(version);return version;
  }
  useEffect(()=>{
-  try{if(localStorage.getItem(COURT_VIEW_KEY)==='2.5d')setCourtProjection('2.5d');}catch{/* View preferences are optional. */}
   try{const initial=browserMatchAdapter.load()||newSession();localSession.current=initial;latest.current=initial;persistedWriteId.current=initial.writeId;setSession(initial);if(!initial.savedAt)persist(initial);}catch(e){setLoadError(e instanceof Error?e.message:'无法读取本机记录');}
   let unsubscribe:undefined|(()=>void);
   try{
@@ -127,7 +125,6 @@ export default function UmpireApp(){
       <select className="ump-ends-mode" aria-label="换边模式" value={currentEndsMode} disabled={actionBlocked||m.status==='completed'} onChange={e=>changeEndsMode(e.target.value as 'automatic'|'manual')}><option value="automatic">自动换边</option><option value="manual">手动换边</option></select>
       {(currentEndsMode==='manual'||changeHint)&&<button className={'ump-btn ump-ends-button'+(changeHint?' ump-highlight':'')} disabled={actionBlocked||m.status==='completed'} onClick={()=>{if(changeHint)void run({type:'switchEnds'},'已交换半场，比分和发球顺序保持不变。');else setConfirm({title:'手动换边',body:'当前未到规则换边节点。仅在需要核对场上半场或纠正站位时使用；比分和发球顺序保持不变。',label:'确认手动换边',run:()=>{void run({type:'switchEnds'},'已手动核对半场');setConfirm(null);}});}} aria-label={changeHint?'按规则确认换边':'手动换边'}><ArrowLeftRight size={18}/>{changeHint?'确认换边':'换边'}</button>}
       <button className="ump-btn" disabled={(!shared&&conflict)||syncState?.externalConflict||(!shared&&unresolved)} onClick={rotate} aria-label="旋转整个球场视角180度"><RotateCw size={18}/>旋转<span className="ump-key">180°</span></button>
-      <button className={'ump-btn ump-projection-toggle'+(courtProjection==='2.5d'?' ump-highlight':'')} aria-label="2.5D 立体视图" aria-pressed={courtProjection==='2.5d'} onClick={()=>{const next=courtProjection==='2d'?'2.5d':'2d';setCourtProjection(next);try{localStorage.setItem(COURT_VIEW_KEY,next);}catch{/* Keep using this view for the current page. */}}}>2.5D</button>
       {m.status!=='scheduled'&&<button className="ump-btn ump-format-button" onClick={()=>setPanel('rules')}><ShieldCheck size={17}/>赛制</button>}
      </div>
     </div>
@@ -146,7 +143,7 @@ export default function UmpireApp(){
     {m.status==='completed'&&<div className="ump-finished"><CheckCircle2 size={21}/><strong>{m.winner?playerNames(m,m.winner)+' 获胜':'比赛结束'}</strong><small>{m.endReason==='score'?'按赛制完成':'人工确认赛果 · 详见记录'}</small></div>}
    </aside>
    <section className="ump-court-panel" aria-label="执裁球场">
-    <div className="ump-court-stage" aria-busy={saving}><UmpireCourt players={c.players.map(p=>({id:p.id,name:p.name,side:p.sideId,...m.positions[p.id]}))} servingPlayerId={serverId} mode={c.mode} endsSwapped={m.nearSideId==='b'} viewRotated={session.inverted} projection={courtProjection} disabled={m.status==='completed'||actionBlocked} onSwapTeam={sideId=>run({type:'swapTeamPositions',sideId},'队内示意站位已互换')}/></div>
+    <div className="ump-court-stage" aria-busy={saving}><UmpireCourt players={c.players.map(p=>({id:p.id,name:p.name,side:p.sideId,...m.positions[p.id]}))} servingPlayerId={serverId} mode={c.mode} endsSwapped={m.nearSideId==='b'} viewRotated={session.inverted} disabled={m.status==='completed'||actionBlocked} onSwapTeam={sideId=>run({type:'swapTeamPositions',sideId},'队内示意站位已互换')}/></div>
    </section>
   </div>
   {viewer&&<section className="ump-bottom-row"><div className="ump-activity"><div className="ump-activity-title"><History size={18}/><strong>最近记录</strong><button onClick={()=>setPanel('history')}>全部记录 <ArrowRight size={14}/></button></div>{recent.length?<div className="ump-activity-items">{recent.map(e=><div key={e.id} className={(e.type==='formalPenalty'?'ump-formal ':'')+(e.voided?'ump-voided':'')}><span>{stamp(e.at)}</span>{e.type==='formalPenalty'&&<Flag size={14}/>}<p>{eventText(m,e)}{e.voided?' · 已撤销':''}</p><small>{e.scoreAfter}</small></div>)}</div>:<p className="ump-empty-record">确认赛制后开始执裁，每一次操作都会留下记录。</p>}</div><div className={'ump-penalty-summary'+(formal.length?' ump-formal':'')}><Flag size={18}/><div><strong>{formal.length?`正式判罚 ${formal.length} 次`:'暂无正式判罚'}</strong><span>{formal.length?eventText(m,formal.at(-1)!):'普通得分与发球失误独立记录'}</span></div>{formal.length>0&&<button className="ump-icon" aria-label="查看正式判罚" onClick={()=>setPanel('history')}><ArrowRight size={18}/></button>}</div></section>}

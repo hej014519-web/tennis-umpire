@@ -10,7 +10,6 @@ export type UmpireCourtProps={
   mode:'singles'|'doubles';
   endsSwapped:boolean;
   viewRotated:boolean;
-  projection?:'2d'|'2.5d';
   disabled?:boolean;
   onSwapTeam:(side:'a'|'b')=>void|Promise<boolean>;
 };
@@ -25,7 +24,7 @@ const SERVICE_DISTANCE=6.4/23.77*COURT.width;
 function Ball(){return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M5 5c11 3 3 11 14 14M19 5C8 8 16 16 5 19"/></svg>;}
 function Avatar(){return <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" className="ump-court-avatar-background"/><circle cx="20" cy="14" r="6" className="ump-court-avatar-person"/><path d="M8 34c0-8 5-13 12-13s12 5 12 13" className="ump-court-avatar-person"/></svg>;}
 
-export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,viewRotated,projection='2d',disabled=false,onSwapTeam}:UmpireCourtProps){
+export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,viewRotated,disabled=false,onSwapTeam}:UmpireCourtProps){
   const [announcement,setAnnouncement]=useState('');
   const pending=useRef(false);
   const id=useId().replace(/:/g,'');
@@ -51,7 +50,7 @@ export default function UmpireCourt({players,servingPlayerId,mode,endsSwapped,vi
   }
 
   return <section className={'ump-court-root'+(disabled?' ump-court-root--disabled':'')} aria-label={mode==='doubles'?'双打球场':'单打球场'}>
-    <div className={'ump-court-board ump-court-board--'+mode+(projection==='2.5d'?' ump-court-board--perspective':'')} style={viewStyle} role="group" aria-label={mode==='doubles'?'点击球员，交换同队示意站位':'单打球场'} aria-describedby={instructionsId} data-view-rotated={viewRotated?'true':'false'} data-ends-swapped={endsSwapped?'true':'false'} data-projection={projection} data-camera-tilt={projection==='2.5d'?'42':'0'} data-display-order={endsSwapped!==viewRotated?'b,a':'a,b'}>
+    <div className={'ump-court-board ump-court-board--'+mode+' ump-court-board--perspective'} style={viewStyle} role="group" aria-label={mode==='doubles'?'点击球员，交换同队示意站位':'单打球场'} aria-describedby={instructionsId} data-view-rotated={viewRotated?'true':'false'} data-ends-swapped={endsSwapped?'true':'false'} data-projection="2.5d" data-camera-tilt="42" data-display-order={endsSwapped!==viewRotated?'b,a':'a,b'}>
       <div className="ump-court-camera">
       <div className="ump-court-plane">
         <div className="ump-court-edge ump-court-edge--top" aria-hidden="true"/>

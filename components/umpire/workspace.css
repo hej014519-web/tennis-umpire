@@ -166,8 +166,6 @@
 .ump-screen .ump-central-detail small {font-size:10px;margin-left:3px;color:#839088;}
 .ump-screen.ump-referee-workspace .ump-court-panel {min-height:0!important;}
 .ump-screen.ump-referee-workspace .ump-court-stage {padding:2px;}
-.ump-referee-workspace .ump-match-tools .ump-projection-toggle {font-size:13px;font-weight:650;min-width:54px;}
-.ump-referee-workspace .ump-match-tools .ump-projection-toggle[aria-pressed="true"] {background:#dce8ca;border-color:#abc387;color:#2f502f;}
 @media (max-width:850px) {
  .ump-screen .ump-scoreboard {grid-template-columns:minmax(0,1fr) clamp(150px,33vw,260px) minmax(0,1fr);gap:6px;}
  .ump-screen .ump-score-action {min-height:100px;padding:8px;gap:4px;}
@@ -192,7 +190,6 @@
  .ump-screen .ump-central-detail > div {gap:7px;}
  .ump-screen .ump-central-detail small {font-size:9px;margin-left:2px;}
  .ump-referee-workspace .ump-match-tools .ump-btn {font-size:10px;padding:6px 3px;gap:2px;}
- .ump-referee-workspace .ump-match-tools .ump-projection-toggle {min-width:42px;font-size:12px;}
 }
 @media (orientation:landscape) and (max-height:600px) {
  .ump-screen .ump-scoreboard {grid-template-columns:minmax(0,1fr) 240px minmax(0,1fr);}
