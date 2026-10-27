@@ -208,9 +208,6 @@
 .ump-screen .ump-ends-mode:focus-visible {outline:3px solid #779b56;outline-offset:2px;}
 .ump-screen .ump-scoreboard[data-repositioning="true"] .ump-score-action:disabled {opacity:.88;cursor:default;}
 .ump-screen .ump-score-action,.ump-screen .ump-central-head > span,.ump-screen .ump-central-detail > div {transition:background .18s ease;}
-@media (orientation:landscape) and (max-height:500px) {
- .ump-screen.ump-referee-workspace .ump-court-stage:has(.ump-court-board--perspective) {min-height:260px!important;}
-}
 @media (max-width:480px) {
  .ump-screen .ump-ends-mode {min-width:80px;max-width:86px;width:84px;padding:6px 3px;font-size:11px;flex:0 0 84px;}
  .ump-referee-workspace .ump-match-tools .ump-format-button {display:none;}
